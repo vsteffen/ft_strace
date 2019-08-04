@@ -1,0 +1,13 @@
+*.o
+/ft_strace
+*.dSYM
+a.out
+*.a
+/lib
+/objs
+/.idea
+*.pyc
+._*
+.DS_Store
+in.my
+in.ref
