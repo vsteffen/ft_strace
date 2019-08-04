@@ -3,15 +3,11 @@
 
 # include "libft.h"
 
-typedef struct		s_elem {
-	struct s_elem	*prec;
-	struct s_elem	*next;
-}					t_elem;
-
-typedef struct		s_project {
-	t_elem			*elem;
-	t_elem			*current;
-	t_elem			*last;
-}					t_project;
+# include <sys/ptrace.h>
+# include <sys/user.h>
+# include <sys/types.h>
+# include <sys/wait.h>
+# include <sys/stat.h>
+# include <stdbool.h>
 
 #endif
