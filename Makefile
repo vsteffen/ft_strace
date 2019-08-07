@@ -23,7 +23,7 @@ GIT	=	/usr/bin/git
 
 OBJ = $(patsubst %.c, $(OPATH)/%.o, $(SRC))
 
-CFLAGS = -Wall -Wextra -Werror -g
+CFLAGS = -Wall -Wextra -g
 
 ifeq ($(no-asm),y)
 	NO-ASM:= no-asm
@@ -31,22 +31,14 @@ endif
 
 LIB	=	$(ROOT)/lib
 LIBSRCS	=	$(ROOT)/libsrcs
-LIBFT 	=	$(LIBSRCS)/libft
 
 ROOT  	=	$(shell /bin/pwd)
 OPATH 	=	$(ROOT)/objs
 CPATH 	=	$(ROOT)/srcs
-LPATH	=	$(LIBFT)/libft.a
-HPATH 	=	-I $(ROOT)/includes -I $(LIBFT)/includes
+HPATH 	=	-I $(ROOT)/includes
 
 SRC =	ft_strace.c \
 		check_args.c
-
-PRE_CHECK_SUB_LIBFT	:= $(LIBFT)/Makefile
-PRE_CHECK_SUB		:= $(PRE_CHECK_SUB_LIBFT)
-
-PRE_CHECK_LIB_LIBFT := $(LIBFT)/libft.a
-PRE_CHECK_LIB		:= $(PRE_CHECK_LIB_LIBFT) $(PRE_CHECK_LIB_LULZ)
 
 COMPILE	= no
 
@@ -80,39 +72,18 @@ define PRINT_STATUS
 	$(if $(filter $(3),-n),printf $(1),echo ']')
 endef
 
-.PHONY: all clean fclean re lib-clean lib-update
-.SILENT: $(PRE_CHECK_SUB) $(PRE_CHECK_LIB) $(NAME) $(OPATH) $(OPATH)/%.o clean fclean re lib-clean lib-update
+.PHONY: all clean fclean re
+.SILENT: $(NAME) $(OPATH) $(OPATH)/%.o clean fclean re
 
 all: $(NAME)
 
-$(PRE_CHECK_SUB):
-	@echo $(PROJECT)": Init submodule $(dir $@) ... "
-	@$(GIT) submodule init > /dev/null  # can't directly redirect stdout on /dev/null cause of sync wait on Linux
-	@$(GIT) submodule update --recursive --remote > /dev/null
-	@printf $(PROJECT)": $(dir $@) "
-	@$(call PRINT_STATUS,INITIALIZED,SUCCESS)
-
-$(PRE_CHECK_LIB): $(PRE_CHECK_SUB)
-	echo $(PROJECT)": Compile $@ ... " ; \
-	if [ $@ = $(PRE_CHECK_LIB_LIBFT) ] ; then \
-		if [ $(OS) = "Darwin" ] ; then \
-			$(MAKE) -C $(LIBFT) $(NO-ASM) -j$(NPROCS) > /dev/null ; \
-		else \
-			$(MAKE) -C $(LIBFT) no-asm -j$(NPROCS) ; \
-		fi; \
-	else \
-		echo "Other libraries here" ; \
-	fi; \
-	printf $(PROJECT)": $@ " ; \
-	$(call PRINT_STATUS,COMPILED,SUCCESS) ;
-
-$(NAME): $(PRE_CHECK_LIB) $(OPATH) $(OBJ)
+$(NAME): $(OPATH) $(OBJ)
 	$(if $(filter $(COMPILE),yes),echo ']')
 	printf $(PROJECT)": Building $@ ... "
-	$(CC) -o $@ $(CFLAGS) $(OBJ) $(LPATH) $(HPATH)
+	$(CC) -o $@ $(CFLAGS) $(OBJ) $(HPATH)
 	$(call PRINT_STATUS,DONE,SUCCESS)
 
-$(OPATH)/%.o: $(CPATH)/%.c | $(PRE_CHECK_LIB)
+$(OPATH)/%.o: $(CPATH)/%.c
 	$(if $(filter $(COMPILE),no),@printf $(PROJECT)': Files compiling [')
 	$(eval COMPILE := yes)
 	@$(CC) $(CFLAGS) -c $< -o $@ $(HPATH)
@@ -136,15 +107,3 @@ fclean: clean
 
 re: fclean
 	$(MAKE) -C $(ROOT) -j$(NPROCS) -s
-
-lib-clean:
-	echo $(PROJECT)": cleaning libraries ..."
-	-$(MAKE) -C $(LIBFT) fclean -j$(NPROCS) > /dev/null
-	printf $(PROJECT)": $@ rule "
-	$(call PRINT_STATUS,DONE,SUCCESS)
-
-lib-update:
-	echo $(PROJECT)": Update submodules ... "
-	$(GIT) submodule update --recursive --remote > /dev/null
-	printf $(PROJECT)": submodules "
-	$(call PRINT_STATUS,UPDATED,SUCCESS)
