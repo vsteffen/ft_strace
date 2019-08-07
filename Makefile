@@ -39,7 +39,8 @@ CPATH 	=	$(ROOT)/srcs
 LPATH	=	$(LIBFT)/libft.a
 HPATH 	=	-I $(ROOT)/includes -I $(LIBFT)/includes
 
-SRC =	ft_strace.c
+SRC =	ft_strace.c \
+		check_args.c
 
 PRE_CHECK_SUB_LIBFT	:= $(LIBFT)/Makefile
 PRE_CHECK_SUB		:= $(PRE_CHECK_SUB_LIBFT)

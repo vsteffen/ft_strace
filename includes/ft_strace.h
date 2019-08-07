@@ -9,5 +9,10 @@
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <stdbool.h>
+# include <errno.h>
+
+
+char			*get_absolute_path(char *prog_name);
+
 
 #endif
