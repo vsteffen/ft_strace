@@ -1,6 +1,6 @@
 #include "ft_strace.h"
 
-void		start_trace(char *prog, char **env)
+void		start_trace(char *prog, char **av, char **env)
 {
 	int			status;
 	pid_t		child;
@@ -9,7 +9,7 @@ void		start_trace(char *prog, char **env)
 	child = fork();
 	if (child == 0) {
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-		if ((status = execv(prog, env)) == -1)
+		if ((status = execve(prog, av, env)) == -1)
 		{
 			printf("ft_strace: exec: %s\n", strerror(errno));
 			exit(1);
@@ -48,7 +48,6 @@ void		start_trace(char *prog, char **env)
 
 int			main(int ac, char **av, char **env)
 {
-	int			arg_prog;
 	char		*abs_path;
 
 	if (ac < 2)
@@ -56,14 +55,10 @@ int			main(int ac, char **av, char **env)
 		puts("ft_strace: must have PROG [ARGS]");
 		return (EXIT_FAILURE);
 	}
-	arg_prog = 0;
-	while (++arg_prog < ac)
-	{
-		abs_path = get_absolute_path(av[arg_prog]);
-		if (!abs_path)
-			continue ;
-		start_trace(abs_path, env);
-		free(abs_path);
-	}
+	abs_path = get_absolute_path(av[1]);
+	if (!abs_path)
+		exit(EXIT_FAILURE);
+	start_trace(abs_path, av + 2, env);
+	free(abs_path);
 	return (0);
 }
