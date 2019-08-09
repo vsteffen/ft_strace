@@ -33,15 +33,23 @@ char		*get_absolute_path(char *prog_name)
 
 	path = getenv("PATH");
 	tmp_path = concat_path_prog(".", prog_name);
-	if (check_bin_exist(tmp_path))
-		return (tmp_path);
-	free(tmp_path);
-	for (path_dirs = strtok(path, ",:"); path_dirs; path_dirs = strtok(NULL, ":"))
+	if (prog_name 
+		&& (prog_name[0] == '/'
+		|| (prog_name[0] == '.' && (prog_name[1] == '/'
+		|| (prog_name[1] == '.' && prog_name[2] == '/')))))
 	{
-		tmp_path = concat_path_prog(path_dirs, prog_name);
-		if (check_bin_exist(tmp_path))
-			return (tmp_path);
-		free(tmp_path);
+		if (check_bin_exist(prog_name))
+			return (strdup(prog_name));
+	}
+	else
+	{
+		for (path_dirs = strtok(path, ",:"); path_dirs; path_dirs = strtok(NULL, ":"))
+		{
+			tmp_path = concat_path_prog(path_dirs, prog_name);
+			if (check_bin_exist(tmp_path))
+				return (tmp_path);
+			free(tmp_path);
+		}
 	}
 	printf("ft_strace: Can't stat '%s': No such file or directory\n", prog_name);
 	return (NULL);

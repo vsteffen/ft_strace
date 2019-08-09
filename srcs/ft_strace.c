@@ -8,7 +8,12 @@ void		start_trace(char *prog, char **av, char **env)
 
 	child = fork();
 	if (child == 0) {
-		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+		// printf("ptrace -> %ld\n", ptrace(PTRACE_SEIZE, getppid(), NULL, NULL));
+		if (ptrace(PTRACE_SEIZE, getppid(), NULL, NULL) == -1)
+		{
+			printf("ft_strace: ptrace: %s\n", strerror(errno));
+			exit(1);
+		}
 		if ((status = execve(prog, av, env)) == -1)
 		{
 			printf("ft_strace: exec: %s\n", strerror(errno));
@@ -58,7 +63,7 @@ int			main(int ac, char **av, char **env)
 	abs_path = get_absolute_path(av[1]);
 	if (!abs_path)
 		exit(EXIT_FAILURE);
-	start_trace(abs_path, av + 2, env);
+	start_trace(abs_path, av + 1, env);
 	free(abs_path);
 	return (0);
 }
