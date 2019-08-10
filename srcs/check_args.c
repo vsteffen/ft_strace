@@ -1,6 +1,6 @@
 #include "ft_strace.h"
 
-static bool	check_bin_exist(char *path)
+static bool	check_bin_path_exist(char *path)
 {
 	struct stat		sb;
 
@@ -9,48 +9,49 @@ static bool	check_bin_exist(char *path)
 	return (false);
 }
 
-static char	*concat_path_prog(char *path_env, char *prog_name)
+static char	*concat_pathn_prog(char *path_env, size_t path_env_length, char *bin_name)
 {
-	char *abs_path;
+	char *bin_path;
 
-	abs_path = malloc(strlen(path_env) + strlen(prog_name) + 2);
-	if (!abs_path)
+	bin_path = malloc(strlen(path_env) + strlen(bin_name) + 2);
+	if (!bin_path)
 	{
-		puts("Failed to allocate memory with malloc\n");
+		printf("ft_strace: malloc: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	strcpy(abs_path, path_env);
-	strcat(abs_path, "/");
-	strcat(abs_path, prog_name);
-	return (abs_path);
+	strncpy(bin_path, path_env, path_env_length);
+	bin_path[path_env_length] = '\0';
+	strcat(bin_path, "/");
+	strcat(bin_path, bin_name);
+	return (bin_path);
 }
 
-char		*get_absolute_path(char *prog_name)
+char		*get_bin_path(char *bin_name)
 {
-	char *path;
-	char *path_dirs;
-	char *tmp_path;
+	char 	*path;
+	char 	*tmp_path;
+	char	*delim;
 
 	path = getenv("PATH");
-	tmp_path = concat_path_prog(".", prog_name);
-	if (prog_name 
-		&& (prog_name[0] == '/'
-		|| (prog_name[0] == '.' && (prog_name[1] == '/'
-		|| (prog_name[1] == '.' && prog_name[2] == '/')))))
+	if (bin_name 
+		&& (bin_name[0] == '/'
+		|| (bin_name[0] == '.' && (bin_name[1] == '/'
+		|| (bin_name[1] == '.' && bin_name[2] == '/')))))
 	{
-		if (check_bin_exist(prog_name))
-			return (strdup(prog_name));
+		if (check_bin_path_exist(bin_name))
+			return (strdup(bin_name));
 	}
 	else
 	{
-		for (path_dirs = strtok(path, ",:"); path_dirs; path_dirs = strtok(NULL, ":"))
+		while ((delim = strchr(path, ':')))
 		{
-			tmp_path = concat_path_prog(path_dirs, prog_name);
-			if (check_bin_exist(tmp_path))
+			tmp_path = concat_pathn_prog(path, (delim - path), bin_name);
+			if (check_bin_path_exist(tmp_path))
 				return (tmp_path);
 			free(tmp_path);
+			path = ++delim;
 		}
 	}
-	printf("ft_strace: Can't stat '%s': No such file or directory\n", prog_name);
+	printf("ft_strace: Can't stat '%s': No such file or directory\n", bin_name);
 	return (NULL);
 }

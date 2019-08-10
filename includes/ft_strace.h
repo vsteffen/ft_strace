@@ -11,11 +11,12 @@
 # include <sys/types.h>
 # include <sys/wait.h>
 # include <sys/stat.h>
+# include <signal.h>
 # include <stdbool.h>
 # include <errno.h>
 
 
-char			*get_absolute_path(char *prog_name);
+char			*get_bin_path(char *prog_name);
 
 
 #endif

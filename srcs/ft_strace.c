@@ -1,69 +1,118 @@
 #include "ft_strace.h"
 
-void		start_trace(char *prog, char **av, char **env)
+void		tracee(char *bin, char **av_bin, char **env)
 {
-	int			status;
+	int		status;
+
+	kill(getpid(), SIGSTOP);
+	if ((status = execve(bin, av_bin, env)) == -1)
+	{
+		printf("ft_strace: exec: %s\n", strerror(errno));
+		exit(status);
+	}
+	exit(0);
+}
+
+// void		ptrace_event_handler(int status)
+// {
+// 	status = status >> 8;
+// 	if (status == PTRACE_EVENT_VFORK)
+// 		printf("-> PTRACE_EVENT_VFORK");
+// 	else if (status == PTRACE_EVENT_FORK)
+// 		printf("-> PTRACE_EVENT_FORK");
+// 	else if (status == PTRACE_EVENT_CLONE)
+// 		printf("-> PTRACE_EVENT_CLONE");
+// 	else if (status == PTRACE_EVENT_VFORK_DONE)
+// 		printf("-> PTRACE_EVENT_VFORK_DONE");
+// 	else if (status == PTRACE_EVENT_EXEC)
+// 		printf("-> PTRACE_EVENT_EXEC");
+// 	else if (status == PTRACE_EVENT_EXIT)
+// 		printf("-> PTRACE_EVENT_EXIT");
+// 	else if (status == PTRACE_EVENT_STOP)
+// 		printf("-> PTRACE_EVENT_STOP");
+// 	else if (status == PTRACE_EVENT_SECCOMP)
+// 		printf("-> PTRACE_EVENT_SECCOMP");
+// }
+
+bool		handle_syscall(pid_t child, int *status)
+{
+	while (42) {
+		ptrace(PTRACE_SYSCALL, child, 0, 0);
+		waitpid(child, status, __WALL);
+		if (WIFSTOPPED(*status))
+		{
+			if (WSTOPSIG(*status) & 0x80)
+				return (true);
+			else
+				printf("SIGNAL DETECTED\n");
+		}
+		if (WIFEXITED(*status))
+			return (false);
+	}
+}
+
+void		tracer(pid_t child)
+{
+	int		status;
+
+	if (ptrace(PTRACE_SEIZE, child, NULL, NULL) == -1)
+	{
+		printf("ft_strace: ptrace: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (waitpid(child, &status, __WALL) == -1)
+	{
+		printf("ft_strace: waitpid: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (ptrace(PTRACE_SETOPTIONS, child, 0, PTRACE_O_TRACESYSGOOD))
+	{
+		printf("ft_strace: ptrace: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	while(42)
+	{
+		if (!handle_syscall(child, &status))
+			break;
+		fprintf(stderr, "SYSCALL ");
+		if (!handle_syscall(child, &status))
+		{
+			fprintf(stderr, "WITHOUT RETURN\n");
+			break;
+		}
+		fprintf(stderr, "AND RETURN\n");
+	}
+	printf("+++ exited with %d +++\n", WEXITSTATUS(status));
+}
+
+void		start_tracing(char *bin, char **av_bin, char **env)
+{
 	pid_t		child;
-	uint64_t 	old;
 
-	child = fork();
-	if (child == 0) {
-		// printf("ptrace -> %ld\n", ptrace(PTRACE_SEIZE, getppid(), NULL, NULL));
-		if (ptrace(PTRACE_SEIZE, getppid(), NULL, NULL) == -1)
-		{
-			printf("ft_strace: ptrace: %s\n", strerror(errno));
-			exit(1);
-		}
-		if ((status = execve(prog, av, env)) == -1)
-		{
-			printf("ft_strace: exec: %s\n", strerror(errno));
-			exit(1);
-		}
-		exit(0);
+	if ((child = fork()) == -1)
+	{
+		printf("ft_strace: waitpid: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
 	}
-	else {
-		struct user_regs_struct regs;
-
-		old = 0;
-		if (wait(&status) == -1)
-		{
-			printf("ft_strace: wait: %s\n", strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-		while (1) {
-			if (WIFEXITED(status))
-			{
-				printf("+++ exited with %d +++\n", WEXITSTATUS(status));
-				return ;
-			}
-			ptrace(PTRACE_GETREGS, child, NULL, &regs);
-			if (old != regs.rip) {
-				// printf("rip: 0x%llx\n", regs.rip);
-				old = regs.rip;
-			}
-			ptrace(PTRACE_SINGLESTEP, child, NULL, NULL);
-			if (waitpid(child, &status, 0) == -1)
-			{
-				printf("ft_strace: waitpid: %s\n", strerror(errno));
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
+	if (child == 0)
+		tracee(bin, av_bin, env);
+	else
+		tracer(child);
 }
 
 int			main(int ac, char **av, char **env)
 {
-	char		*abs_path;
+	char		*bin_path;
 
 	if (ac < 2)
 	{
 		puts("ft_strace: must have PROG [ARGS]");
 		return (EXIT_FAILURE);
 	}
-	abs_path = get_absolute_path(av[1]);
-	if (!abs_path)
+	bin_path = get_bin_path(av[1]);
+	if (!bin_path)
 		exit(EXIT_FAILURE);
-	start_trace(abs_path, av + 1, env);
-	free(abs_path);
+	start_tracing(bin_path, ++av, env);
+	free(bin_path);
 	return (0);
 }
