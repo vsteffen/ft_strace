@@ -34,7 +34,51 @@ void		tracee(char *bin, char **av_bin, char **env)
 // 		printf("-> PTRACE_EVENT_SECCOMP");
 // }
 
-bool		handle_syscall(pid_t child, int *status)
+char		*identify_si_code(struct s_strace *strace, siginfo_t *sig)
+{
+	if (sig->si_code == SI_KERNEL)
+		return ("SI_KERNEL");
+	if (sig->si_code <= 0)
+	{
+		struct s_si_code_reg  *ptr = strace->si_code_reg;
+		for (uint8_t i = 0; i < SI_CODE_REG_NB; i++, ptr++)
+		{
+			if (sig->si_code == strace->si_code_reg[i].si_code)
+				return (strace->si_code_reg[i].to_str);
+		}
+		return ("UNKNOWN");
+	}
+	struct s_si_code  *ptr = strace->si_code;
+	for (uint8_t i = 0; i < SI_CODE_NB; i++, ptr++)
+	{
+		if (sig->si_signo == strace->si_code[i].si_signo)
+		{
+			for (uint8_t j = i; j < SI_CODE_NB; j++, ptr++)
+			{
+				if (sig->si_code == strace->si_code[j].si_code)
+					return (strace->si_code[j].to_str);
+				if (sig->si_signo != strace->si_code[j].si_signo)
+					return ("UNKNOWN");
+			}
+
+		}
+	}
+	return ("UNKNOWN");
+}
+
+void		print_sig(struct s_strace *strace, pid_t child)
+{
+	siginfo_t		sig;
+
+	if (ptrace(PTRACE_GETSIGINFO, child, NULL, &sig) == -1)
+	{
+		printf("ft_strace: ptrace: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	printf("--- %s {si_signo=%s, si_code=%s, \n", strace->signo_to_str[sig.si_signo], strace->signo_to_str[sig.si_signo], identify_si_code(strace, &sig));
+}
+
+bool		handle_syscall(struct s_strace *strace, pid_t child, int *status)
 {
 	while (42) {
 		ptrace(PTRACE_SYSCALL, child, 0, 0);
@@ -44,14 +88,14 @@ bool		handle_syscall(pid_t child, int *status)
 			if (WSTOPSIG(*status) & 0x80)
 				return (true);
 			else
-				printf("SIGNAL DETECTED\n");
+				print_sig(strace, child);
 		}
 		if (WIFEXITED(*status))
 			return (false);
 	}
 }
 
-void		tracer(pid_t child)
+void		tracer(struct s_strace *strace, pid_t child)
 {
 	int		status;
 
@@ -72,10 +116,10 @@ void		tracer(pid_t child)
 	}
 	while(42)
 	{
-		if (!handle_syscall(child, &status))
+		if (!handle_syscall(strace, child, &status))
 			break;
 		fprintf(stderr, "SYSCALL ");
-		if (!handle_syscall(child, &status))
+		if (!handle_syscall(strace, child, &status))
 		{
 			fprintf(stderr, "WITHOUT RETURN\n");
 			break;
@@ -85,7 +129,7 @@ void		tracer(pid_t child)
 	printf("+++ exited with %d +++\n", WEXITSTATUS(status));
 }
 
-void		start_tracing(char *bin, char **av_bin, char **env)
+void		start_tracing(struct s_strace *strace, char *bin, char **av_bin, char **env)
 {
 	pid_t		child;
 
@@ -97,7 +141,7 @@ void		start_tracing(char *bin, char **av_bin, char **env)
 	if (child == 0)
 		tracee(bin, av_bin, env);
 	else
-		tracer(child);
+		tracer(strace, child);
 }
 
 int			main(int ac, char **av, char **env)
@@ -112,7 +156,9 @@ int			main(int ac, char **av, char **env)
 	bin_path = get_bin_path(av[1]);
 	if (!bin_path)
 		exit(EXIT_FAILURE);
-	start_tracing(bin_path, ++av, env);
+
+	struct s_strace strace = {SI_SIGNO, SI_CODE, SI_CODE_REG};
+	start_tracing(&strace, bin_path, ++av, env);
 	free(bin_path);
 	return (0);
 }
