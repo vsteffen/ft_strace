@@ -75,18 +75,16 @@ union x86_64_regs {
 
 char			*get_bin_path(char *prog_name);
 
-size_t			get_and_print_syscall_64(struct user_regs_struct *x86_64_r, pid_t child, enum e_syscall_state sys_state);
-size_t			get_and_print_syscall_32(struct i386_user_regs_struct *i386_r, pid_t child, enum e_syscall_state sys_state);
+bool			handle_sig_and_wait_syscall(pid_t child, int *status);
+void			get_registers_values(union x86_64_regs *regs, int child);
+
+bool			get_and_print_syscall_64(union x86_64_regs *x86_64_r, pid_t child, int *status);
+bool			get_and_print_syscall_32(union x86_64_regs *i386_r, pid_t child, int *status);
 
 size_t			print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size_t size);
+bool		print_ret_val(uintmax_t val, enum e_type_syscall_arg type, pid_t child, int *status, size_t nb_char_print, struct s_syscall_state state);
 
-void			syscall32_generic_end_handler(uintmax_t eax, const struct s_syscall32_data *syscall_data, size_t nb_char_print, pid_t child, __unused enum e_syscall_arch sys_arch, __unused enum e_syscall_state sys_state);
-void			syscall64_generic_end_handler(uintmax_t rax, const struct s_syscall64_data *syscall_data, size_t nb_char_print, pid_t child, __unused enum e_syscall_arch sys_arch, __unused enum e_syscall_state sys_state);
-
-size_t			syscall_read_handler32(struct i386_user_regs_struct *regs, const struct s_syscall32_data *syscall_data, pid_t child, enum e_syscall_arch sys_arch, enum e_syscall_state sys_state);
-size_t			syscall_read_handler64(struct user_regs_struct *regs, const struct s_syscall64_data *syscall_data, pid_t child, enum e_syscall_arch sys_arch, enum e_syscall_state sys_state);
-void			syscall_read_end_handler32(uintmax_t reg, const struct s_syscall32_data *syscall_data, size_t nb_char_print, pid_t child, enum e_syscall_arch sys_arch, enum e_syscall_state sys_state);
-void			syscall_read_end_handler64(uintmax_t reg, const struct s_syscall64_data *syscall_data, size_t nb_char_print, pid_t child, enum e_syscall_arch sys_arch, enum e_syscall_state sys_state);
+bool			syscall_read_write_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch sys_arch, int *status);
 
 
 #endif

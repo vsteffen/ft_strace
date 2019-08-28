@@ -86,7 +86,7 @@ bool		handle_sig_and_wait_syscall(pid_t child, int *status)
 	}
 }
 
-enum e_arch_type	prepare_syscall_arch(pid_t child, struct iovec *io)
+enum e_arch_type	get_syscall_arch(pid_t child, struct iovec *io)
 {
 	static uint8_t count_for_first_syscall = 0;
 
@@ -123,6 +123,13 @@ void		initialize_tracer(pid_t child) {
 	}
 }
 
+void		get_registers_values(union x86_64_regs *regs, int child) {
+	if (ptrace(PTRACE_GETREGS, child, NULL, regs)) {
+		printf("ft_strace: ptrace: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+}
+
 void		tracer(pid_t child)
 {
 	enum e_arch_type arch_type;
@@ -138,26 +145,14 @@ void		tracer(pid_t child)
 	{
 		if (!handle_sig_and_wait_syscall(child, &status))
 			break;
-		fprintf(stderr, "SYSCALL ");
-		if (ptrace(PTRACE_GETREGS, child, NULL, &regs)) {
-			printf("ft_strace: ptrace: %s\n", strerror(errno));
-			exit(EXIT_FAILURE);
+		get_registers_values(&regs, child);
+		arch_type = get_syscall_arch(child, &io);
+		if (arch_type == I386) {
+			if (!get_and_print_syscall_32(&regs, child, &status)) break ;
 		}
-		arch_type = prepare_syscall_arch(child, &io);
-		// fprintf(stderr, "AT BEGIN -> %llu - 0x%p\n", regs.x86_64.rsi, &regs.x86_64.rsi);
-		// printf("Type --> %d\n", arch_type == I386 ? 32 :  64);
-		if (arch_type == I386)
-			get_and_print_syscall_32(&regs.i386, child, SYSCALL_BEGIN);
-		else
-			get_and_print_syscall_64(&regs.x86_64, child, SYSCALL_BEGIN);
-		if (!handle_sig_and_wait_syscall(child, &status)) {
-			fprintf(stderr, " = ?\n");
-			break;
+		else {
+			if (!get_and_print_syscall_64(&regs, child, &status)) break ;
 		}
-		if (arch_type == I386)
-			get_and_print_syscall_32(&regs.i386, child, SYSCALL_END);
-		else
-			get_and_print_syscall_64(&regs.x86_64, child, SYSCALL_END);
 	}
 	printf("+++ exited with %d +++\n", WEXITSTATUS(status));
 }
