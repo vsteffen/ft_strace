@@ -1,3 +1,6 @@
+/32
+/64
+/execve
 *.o
 /ft_strace
 *.dSYM
