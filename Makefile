@@ -38,7 +38,8 @@ CPATH 	=	$(ROOT)/srcs
 HPATH 	=	-I $(ROOT)/includes
 
 SRC =	ft_strace.c \
-		check_args.c
+		check_args.c \
+		print_syscall_arg.c
 
 COMPILE	= no
 

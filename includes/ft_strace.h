@@ -8,6 +8,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <stdint.h>
+# include <stddef.h>
 # include <string.h>
 # include <sys/ptrace.h>
 # include <sys/user.h>
@@ -17,36 +18,64 @@
 
 # include <signal.h>
 
+# include <elf.h>
+# include <sys/uio.h>
+
 # include <stdbool.h>
 # include <errno.h>
 
-# define SI_SIGNO {"NO_SIG", "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP", "SIGABRT", "SIGBUS", "SIGFPE", "SIGKILL", "SIGUSR1", "SIGSEGV", "SIGUSR2", "SIGPIPE", "SIGALRM", "SIGTERM", "SIGSTKFLT", "SIGCHLD", "SIGCONT", "SIGSTOP", "SIGTSTP", "SIGTTIN", "SIGTTOU", "SIGURG", "SIGXCPU", "SIGXFSZ", "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGIO", "SIGPWR", "SIGSYS"}
-# define SI_CODE {{SIGILL, ILL_ILLOPC, "ILL_ILLOPC"}, {SIGILL, ILL_ILLOPN, "ILL_ILLOPN"}, {SIGILL, ILL_ILLADR, "ILL_ILLADR"}, {SIGILL, ILL_ILLTRP, "ILL_ILLTRP"}, {SIGILL, ILL_PRVOPC, "ILL_PRVOPC"}, {SIGILL, ILL_PRVREG, "ILL_PRVREG"}, {SIGILL, ILL_COPROC, "ILL_COPROC"}, {SIGILL, ILL_BADSTK, "ILL_BADSTK"}, {SIGFPE, FPE_INTDIV, "FPE_INTDIV"}, {SIGFPE, FPE_INTOVF, "FPE_INTOVF"}, {SIGFPE, FPE_FLTDIV, "FPE_FLTDIV"}, {SIGFPE, FPE_FLTOVF, "FPE_FLTOVF"}, {SIGFPE, FPE_FLTUND, "FPE_FLTUND"}, {SIGFPE, FPE_FLTRES, "FPE_FLTRES"}, {SIGFPE, FPE_FLTINV, "FPE_FLTINV"}, {SIGFPE, FPE_FLTSUB, "FPE_FLTSUB"}, {SIGSEGV, SEGV_MAPERR, "SEGV_MAPERR"}, {SIGSEGV, SEGV_ACCERR, "SEGV_ACCERR"}, {SIGSEGV, SEGV_BNDERR, "SEGV_BNDERR"}, {SIGSEGV, SEGV_PKUERR, "SEGV_PKUERR"}, {SIGBUS, BUS_ADRALN, "BUS_ADRALN"}, {SIGBUS, BUS_ADRERR, "BUS_ADRERR"}, {SIGBUS, BUS_OBJERR, "BUS_OBJERR"}, {SIGBUS, BUS_MCEERR_AR, "BUS_MCEERR_AR"}, {SIGBUS, BUS_MCEERR_AO, "BUS_MCEERR_AO"}, {SIGTRAP, TRAP_BRKPT, "TRAP_BRKPT"}, {SIGTRAP, TRAP_TRACE, "TRAP_TRACE"}, {SIGCHLD, CLD_EXITED, "CLD_EXITED"}, {SIGCHLD, CLD_KILLED, "CLD_KILLED"}, {SIGCHLD, CLD_DUMPED, "CLD_DUMPED"}, {SIGCHLD, CLD_TRAPPED, "CLD_TRAPPED"}, {SIGCHLD, CLD_STOPPED, "CLD_STOPPED"}, {SIGCHLD, CLD_CONTINUED, "CLD_CONTINUED"}, {SIGPOLL, POLL_IN, "POLL_IN"}, {SIGPOLL, POLL_OUT, "POLL_OUT"}, {SIGPOLL, POLL_MSG, "POLL_MSG"}, {SIGPOLL, POLL_ERR, "POLL_ERR"}, {SIGPOLL, POLL_PRI, "POLL_PRI"}, {SIGPOLL, POLL_HUP, "POLL_HUP"}}
-# define SI_CODE_REG {{SI_USER, "SI_USER"}, {SI_KERNEL, "SI_KERNEL"}, {SI_QUEUE, "SI_QUEUE"}, {SI_TIMER, "SI_TIMER"}, {SI_MESGQ, "SI_MESGQ"}, {SI_ASYNCIO, "SI_ASYNCIO"}, {SI_SIGIO, "SI_SIGIO"}, {SI_TKILL, "SI_TKILL"}}
-# define SI_CODE_NB 39
-# define SI_CODE_REG_NB 8
-// {SIGSYS, SYS_SECCOMP, "SYS_SECCOMP"}
+
+# define COUNT_OF(ptr) (sizeof(ptr) / sizeof((ptr)[0]))
 
 
-struct s_si_code_reg {
-	int		si_code;
-	char	*to_str;
+struct s_si_code_regular {
+	const int	si_code;
+	const char	*to_str;
 };
 
 struct s_si_code {
-	int		si_signo;
-	int		si_code;
-	char	*to_str;
+	const int	si_signo;
+	const int	si_code;
+	const char	*to_str;
 };
 
-struct s_strace {
-	char  	*signo_to_str[32];
-	struct s_si_code				si_code[SI_CODE_NB];
-	struct s_si_code_reg	si_code_reg[SI_CODE_REG_NB];
+struct i386_user_regs_struct {
+	uint32_t ebx;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t esi;
+	uint32_t edi;
+	uint32_t ebp;
+	uint32_t eax;
+	uint32_t xds;
+	uint32_t xes;
+	uint32_t xfs;
+	uint32_t xgs;
+	uint32_t orig_eax;
+	uint32_t eip;
+	uint32_t xcs;
+	uint32_t eflags;
+	uint32_t esp;
+	uint32_t xss;
 };
+
+enum e_arch_type {
+	X86_64,
+	I386
+};
+
+union x86_64_regs {
+	struct user_regs_struct			x86_64;
+	struct i386_user_regs_struct 	i386;
+};
+
+# include "syscall_arg.h"
 
 
 char			*get_bin_path(char *prog_name);
+
+void			get_and_print_syscall_64(struct user_regs_struct *x86_64_r);
+void			get_and_print_syscall_32(struct i386_user_regs_struct *i386_r);
 
 
 #endif
