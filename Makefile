@@ -39,7 +39,8 @@ HPATH 	=	-I $(ROOT)/includes
 
 SRC =	ft_strace.c \
 		check_args.c \
-		print_syscall_arg.c
+		print_syscall_arg.c \
+		syscall_handlers.c
 
 COMPILE	= no
 

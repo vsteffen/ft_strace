@@ -147,16 +147,17 @@ void		tracer(pid_t child)
 		// fprintf(stderr, "AT BEGIN -> %llu - 0x%p\n", regs.x86_64.rsi, &regs.x86_64.rsi);
 		// printf("Type --> %d\n", arch_type == I386 ? 32 :  64);
 		if (arch_type == I386)
-			get_and_print_syscall_32(&regs.i386, child);
+			get_and_print_syscall_32(&regs.i386, child, SYSCALL_BEGIN);
 		else
-			get_and_print_syscall_64(&regs.x86_64, child);
+			get_and_print_syscall_64(&regs.x86_64, child, SYSCALL_BEGIN);
 		if (!handle_sig_and_wait_syscall(child, &status)) {
-			fprintf(stderr, "WITHOUT RETURN\n");
+			fprintf(stderr, " = ?\n");
 			break;
 		}
-		if (regs.x86_64.orig_rax == 0)
-			get_and_print_syscall_64(&regs.x86_64, child);
-		fprintf(stderr, "AND RETURN\n");
+		if (arch_type == I386)
+			get_and_print_syscall_32(&regs.i386, child, SYSCALL_END);
+		else
+			get_and_print_syscall_64(&regs.x86_64, child, SYSCALL_END);
 	}
 	printf("+++ exited with %d +++\n", WEXITSTATUS(status));
 }
