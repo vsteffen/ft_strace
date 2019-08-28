@@ -123,7 +123,6 @@ void		initialize_tracer(pid_t child) {
 	}
 }
 
-
 void		tracer(pid_t child)
 {
 	enum e_arch_type arch_type;
@@ -145,15 +144,18 @@ void		tracer(pid_t child)
 			exit(EXIT_FAILURE);
 		}
 		arch_type = prepare_syscall_arch(child, &io);
+		// fprintf(stderr, "AT BEGIN -> %llu - 0x%p\n", regs.x86_64.rsi, &regs.x86_64.rsi);
 		// printf("Type --> %d\n", arch_type == I386 ? 32 :  64);
 		if (arch_type == I386)
-			get_and_print_syscall_32(&regs.i386);
+			get_and_print_syscall_32(&regs.i386, child);
 		else
-			get_and_print_syscall_64(&regs.x86_64);
+			get_and_print_syscall_64(&regs.x86_64, child);
 		if (!handle_sig_and_wait_syscall(child, &status)) {
 			fprintf(stderr, "WITHOUT RETURN\n");
 			break;
 		}
+		if (regs.x86_64.orig_rax == 0)
+			get_and_print_syscall_64(&regs.x86_64, child);
 		fprintf(stderr, "AND RETURN\n");
 	}
 	printf("+++ exited with %d +++\n", WEXITSTATUS(status));

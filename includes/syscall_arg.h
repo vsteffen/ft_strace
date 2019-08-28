@@ -3,6 +3,7 @@
 
 # define LINE_MIN_SIZE 40
 # define PRINT_STR_MAX_SIZE 68
+# define STR_UNESCAPE_MAX_SIZE 32
 
 
 enum e_type_syscall_arg {
@@ -28,10 +29,16 @@ enum e_type_syscall_arg {
 	NONE
 };
 
-struct s_syscall_data {
+struct s_syscall32_data {
 	const char *name;
 	const enum e_type_syscall_arg args[7];
-	void (* const handler)(struct i386_user_regs_struct *, const struct s_syscall_data *);
+	size_t (* const handler)(struct i386_user_regs_struct *, const struct s_syscall32_data *, pid_t child);
+};
+
+struct s_syscall64_data {
+	const char *name;
+	const enum e_type_syscall_arg args[7];
+	size_t (* const handler)(struct user_regs_struct *, const struct s_syscall64_data *, pid_t child);
 };
 
 

@@ -8,6 +8,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <stdint.h>
+# include <ctype.h>
 # include <stddef.h>
 # include <string.h>
 # include <sys/ptrace.h>
@@ -74,8 +75,8 @@ union x86_64_regs {
 
 char			*get_bin_path(char *prog_name);
 
-void			get_and_print_syscall_64(struct user_regs_struct *x86_64_r);
-void			get_and_print_syscall_32(struct i386_user_regs_struct *i386_r);
+size_t			get_and_print_syscall_64(struct user_regs_struct *x86_64_r, pid_t child);
+size_t			get_and_print_syscall_32(struct i386_user_regs_struct *i386_r, pid_t child);
 
 
 #endif
