@@ -33,8 +33,13 @@ bool		syscall_read_write_handler(union x86_64_regs *regs, const struct s_syscall
 	}
 
 	get_registers_values(regs, child);
-	if (sys_arch == SYSCALL_32)
-		return print_ret_val((uint32_t)regs->i386_r.eax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_END, is_exited});
+	if (sys_arch == SYSCALL_32) {
+		#ifdef __x86_64__
+			return print_ret_val((uint32_t)regs->x86_64_r.rax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_END, is_exited});
+		#else
+			return print_ret_val(regs->i386_r.eax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_END, is_exited});
+		#endif
+	}
 	else
 		return print_ret_val(regs->x86_64_r.rax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_END, is_exited});
 }

@@ -169,7 +169,11 @@ bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 		nb_char_print += print_arg((*(uint32_t *)((void *)regs + regs_offset[i])), syscall_data->args[i], child, 0);
 	}
 	get_registers_values(regs, child);
-	return print_ret_val((uint32_t)regs->i386_r.eax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
+	#ifdef __x86_64__
+		return print_ret_val((uint32_t)regs->x86_64_r.rax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
+	#else
+		return print_ret_val(regs->i386_r.eax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
+	#endif
 }
 
 bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child, int *status) {
