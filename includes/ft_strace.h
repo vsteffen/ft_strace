@@ -40,6 +40,37 @@ struct s_si_code {
 	const char	*to_str;
 };
 
+struct x86_64_user_regs_struct
+{
+  __extension__ unsigned long long int r15;
+  __extension__ unsigned long long int r14;
+  __extension__ unsigned long long int r13;
+  __extension__ unsigned long long int r12;
+  __extension__ unsigned long long int rbp;
+  __extension__ unsigned long long int rbx;
+  __extension__ unsigned long long int r11;
+  __extension__ unsigned long long int r10;
+  __extension__ unsigned long long int r9;
+  __extension__ unsigned long long int r8;
+  __extension__ unsigned long long int rax;
+  __extension__ unsigned long long int rcx;
+  __extension__ unsigned long long int rdx;
+  __extension__ unsigned long long int rsi;
+  __extension__ unsigned long long int rdi;
+  __extension__ unsigned long long int orig_rax;
+  __extension__ unsigned long long int rip;
+  __extension__ unsigned long long int cs;
+  __extension__ unsigned long long int eflags;
+  __extension__ unsigned long long int rsp;
+  __extension__ unsigned long long int ss;
+  __extension__ unsigned long long int fs_base;
+  __extension__ unsigned long long int gs_base;
+  __extension__ unsigned long long int ds;
+  __extension__ unsigned long long int es;
+  __extension__ unsigned long long int fs;
+  __extension__ unsigned long long int gs;
+};
+
 struct i386_user_regs_struct {
 	uint32_t ebx;
 	uint32_t ecx;
@@ -66,8 +97,8 @@ enum e_arch_type {
 };
 
 union x86_64_regs {
-	struct user_regs_struct			x86_64;
-	struct i386_user_regs_struct 	i386;
+	struct x86_64_user_regs_struct	x86_64_r;
+	struct i386_user_regs_struct 	i386_r;
 };
 
 # include "syscall_arg.h"

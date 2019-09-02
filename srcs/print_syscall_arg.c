@@ -131,12 +131,12 @@ bool		print_ret_val(uintmax_t val, enum e_type_syscall_arg type, pid_t child, in
 bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, __unused enum e_syscall_arch sys_arch, int *status)
 {
 	static const size_t regs_offset [] = {
-		offsetof(struct user_regs_struct, rdi),
-		offsetof(struct user_regs_struct, rsi),
-		offsetof(struct user_regs_struct, rdx),
-		offsetof(struct user_regs_struct, r10),
-		offsetof(struct user_regs_struct, r8),
-		offsetof(struct user_regs_struct, r9)
+		offsetof(struct x86_64_user_regs_struct, rdi),
+		offsetof(struct x86_64_user_regs_struct, rsi),
+		offsetof(struct x86_64_user_regs_struct, rdx),
+		offsetof(struct x86_64_user_regs_struct, r10),
+		offsetof(struct x86_64_user_regs_struct, r8),
+		offsetof(struct x86_64_user_regs_struct, r9)
 	};
 
 	size_t nb_char_print = 0;
@@ -147,7 +147,7 @@ bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 		nb_char_print += print_arg(*(uintmax_t *)((void *)regs + regs_offset[i]), syscall_data->args[i], child, 0);
 	}
 	get_registers_values(regs, child);
-	return print_ret_val(regs->x86_64.rax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
+	return print_ret_val(regs->x86_64_r.rax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
 }
 
 bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, __unused enum e_syscall_arch sys_arch, int *status)
@@ -169,7 +169,7 @@ bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 		nb_char_print += print_arg((*(uint32_t *)((void *)regs + regs_offset[i])), syscall_data->args[i], child, 0);
 	}
 	get_registers_values(regs, child);
-	return print_ret_val((uint32_t)regs->i386.eax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
+	return print_ret_val((uint32_t)regs->i386_r.eax, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, false});
 }
 
 bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child, int *status) {
@@ -177,7 +177,7 @@ bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child, int *status
 	# include "syscall64.h"
 	};
 
-	if (regs->x86_64.orig_rax > 1)
+	if (regs->x86_64_r.orig_rax > 1)
 	{
 		fprintf(stderr, "SYSCALL(...)");
 		if (!handle_sig_and_wait_syscall(child, status)) {
@@ -188,12 +188,12 @@ bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child, int *status
 		return (true);
 	}
 
-	if (regs->x86_64.orig_rax > COUNT_OF(syscall64)) {
-		printf("ft_strace: wrong syscall number (%llu)\n", regs->x86_64.orig_rax);
+	if (regs->x86_64_r.orig_rax > COUNT_OF(syscall64)) {
+		printf("ft_strace: wrong syscall number (%llu)\n", regs->x86_64_r.orig_rax);
 		exit(EXIT_FAILURE);
 	}
 
-	return syscall64[regs->x86_64.orig_rax].handler(regs, &syscall64[regs->x86_64.orig_rax], child, SYSCALL_64, status);
+	return syscall64[regs->x86_64_r.orig_rax].handler(regs, &syscall64[regs->x86_64_r.orig_rax], child, SYSCALL_64, status);
 }
 
 bool		get_and_print_syscall_32(union x86_64_regs *regs, pid_t child, int *status) {
@@ -201,7 +201,7 @@ bool		get_and_print_syscall_32(union x86_64_regs *regs, pid_t child, int *status
 	# include "syscall32.h"
 	};
 
-	if (regs->i386.orig_eax > 4)
+	if (regs->i386_r.orig_eax > 4)
 	{
 		fprintf(stderr, "SYSCALL(...)");
 		if (!handle_sig_and_wait_syscall(child, status)) {
@@ -212,11 +212,11 @@ bool		get_and_print_syscall_32(union x86_64_regs *regs, pid_t child, int *status
 		return (true);
 	}
 
-	if (regs->i386.orig_eax > COUNT_OF(syscall32)) {
-		printf("ft_strace: wrong syscall number (%u)\n", regs->i386.orig_eax);
+	if (regs->i386_r.orig_eax > COUNT_OF(syscall32)) {
+		printf("ft_strace: wrong syscall number (%u)\n", regs->i386_r.orig_eax);
 		exit(EXIT_FAILURE);
 	}
 
-	return syscall32[regs->i386.orig_eax].handler(regs, &syscall32[regs->i386.orig_eax], child, SYSCALL_32, status);
+	return syscall32[regs->i386_r.orig_eax].handler(regs, &syscall32[regs->i386_r.orig_eax], child, SYSCALL_32, status);
 }
 
