@@ -12,23 +12,23 @@ size_t		print_escape_string(const uint8_t *str, const size_t total_read, size_t 
 	while ((size_t)(str - ptr) < total_read) {
 		if (*str == '\f') {
 			memcpy(escape_str + i, "\\f", 3);
-			i += 3;
+			i += 2;
 		}
 		else if (*str == '\n') {
 			memcpy(escape_str + i, "\\n", 3);
-			i += 3;
+			i += 2;
 		}
 		else if (*str == '\r') {
 			memcpy(escape_str + i, "\\r", 3);
-			i += 3;
+			i += 2;
 		}
 		else if (*str == '\t') {
 			memcpy(escape_str + i, "\\t", 3);
-			i += 3;
+			i += 2;
 		}
 		else if (*str == '\v') {
 			memcpy(escape_str + i, "\\v", 3);
-			i += 3;
+			i += 2;
 		}
 		else if (isprint(*str))
 			escape_str[i++] = *str;
