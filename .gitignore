@@ -2,6 +2,8 @@
 64
 execve
 get_real_type
+tools/syscall_table32.h
+tools/syscall_table64.h
 *.o
 /ft_strace
 *.dSYM

@@ -91,11 +91,6 @@ struct i386_user_regs_struct {
 	uint32_t xss;
 };
 
-enum e_arch_type {
-	X86_64,
-	I386
-};
-
 union x86_64_regs {
 	struct x86_64_user_regs_struct	x86_64_r;
 	struct i386_user_regs_struct 	i386_r;
@@ -113,9 +108,11 @@ bool			get_and_print_syscall_64(union x86_64_regs *x86_64_r, pid_t child, int *s
 bool			get_and_print_syscall_32(union x86_64_regs *i386_r, pid_t child, int *status);
 
 size_t			print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size_t size);
-bool		print_ret_val(uintmax_t val, enum e_type_syscall_arg type, pid_t child, int *status, size_t nb_char_print, struct s_syscall_state state);
+bool			print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t child, int *status, size_t nb_char_print, struct s_syscall_state state);
+
+bool			syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch, int *status);
+bool			syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch, int *status);
 
 bool			syscall_read_write_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch sys_arch, int *status);
-
 
 #endif

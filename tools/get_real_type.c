@@ -92,21 +92,21 @@ int		main(int ac, char **av) {
 
 	// Unknown type
 	else if (strcmp(av[1], "stack_t") == 0)
-		printf("%s", "T_stack_t");
+		printf("%s", "T_STACK_T");
 	else if (strcmp(av[1], "old_kernel_sigset_t") == 0)
-		printf("%s", "T_old_kernel_sigset_t");
+		printf("%s", "T_OLD_KERNEL_SIGSET_T");
 	else if (strcmp(av[1], "kernel_sigset_t") == 0)
-		printf("%s", "T_kernel_sigset_t");
+		printf("%s", "T_KERNEL_SIGSET_T");
 	else if (strcmp(av[1], "sigset_t") == 0)
-		printf("%s", "T_sigset_t");
+		printf("%s", "T_SIGSET_T");
 	else if (strcmp(av[1], "siginfo_t") == 0)
-		printf("%s", "T_siginfo_t");
+		printf("%s", "T_SIGINFO_T");
 	else if (strcmp(av[1], "sighandler_t") == 0)
-		printf("%s", "T_sighandler_t");
+		printf("%s", "T_SIGHANDLER_T");
 	else if (strcmp(av[1], "caddr_t") == 0)
-		printf("%s", "T_caddr_t");
+		printf("%s", "T_CADDR_T");
 	else if (strcmp(av[1], "cpu_set_t") == 0)
-		printf("%s", "T_cpu_set_t");
+		printf("%s", "T_CPU_SET_T");
 	else
 		printf("UNKNOWN");
 	return (0);

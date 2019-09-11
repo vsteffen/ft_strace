@@ -52,7 +52,7 @@ IDENTIFY_TYPE () {
 
 	# Unknown
 	if [[ "${SPLIT[0]}" == "..." ]]; then
-		RET_TYPE="UINTMAX"
+		RET_TYPE="ULLINT"
 		return
 	fi
 
@@ -123,7 +123,7 @@ GEN_SYSCALL_FILE () {
 			if [ $? -ne 0 ]; then
 				MAN_PAGE=`man -P cat 3 "$SYSCALL" 2> /dev/null`
 				if [ $? -ne 0 ]; then
-					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, NONE}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_COUNT"
+					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, LLINT}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_COUNT" | tee -a $2
 					SYSCALL_FAIL+="\n$SYSCALL"
 					SYSCALL_COUNT=$((SYSCALL_COUNT+1))
 					continue
@@ -144,9 +144,9 @@ GEN_SYSCALL_FILE () {
 			if [ -z "$PROTOTYPE" ]; then
 				IS_UNIMPLEMENTED=`echo $MAN_PAGE | cut -c1-"$PATTERN_UNIMPLEMENTED_LENGTH"`
 				if [ "$IS_UNIMPLEMENTED" == "$PATTERN_UNIMPLEMENTED" ]; then
-					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, NONE}, $3},$UNIMPLEMENTED_SYSCALL\n" "$SYSCALL_COUNT"
+					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, LLINT}, $3},$UNIMPLEMENTED_SYSCALL\n" "$SYSCALL_COUNT" | tee -a $2
 				else
-					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, NONE}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_COUNT"
+					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, LLINT}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_COUNT" | tee -a $2
 				fi
 				SYSCALL_FAIL+="\n$SYSCALL"
 				SYSCALL_COUNT=$((SYSCALL_COUNT+1))

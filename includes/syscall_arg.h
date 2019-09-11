@@ -3,7 +3,8 @@
 
 # define LINE_MIN_SIZE 40
 # define PRINT_STR_MAX_SIZE 68
-# define STR_UNESCAPE_MAX_SIZE 32
+# define BUFF_UNESCAPE_MAX_SIZE 32
+# define STR_UNESCAPE_MAX_SIZE 4096
 # define MAX_ARG 6
 
 enum e_syscall_arch {
@@ -18,6 +19,7 @@ enum e_syscall_time_status {
 
 struct s_syscall_state {
 	enum e_syscall_time_status time_status;
+	enum e_syscall_arch arch;
 	bool is_exited;
 };
 
@@ -27,21 +29,23 @@ enum e_type_syscall_arg {
 	INT,
 	LINT,
 	LLINT,
-	INTMAX,
 	UCHAR,
 	USHORT,
 	UINT,
 	ULINT,
 	ULLINT,
-	UINTMAX,
-	SIZE_T,
 	FLOAT,
 	DOUBLE,
 	LDOUBLE,
 	ADDR,
 	BUFF,
 	STR,
-	STRUCT,
+	UNKNOWN,
+
+	T_CADDR_T,
+	T_SIGHANDLER_T,
+	E_PTRACE_REQUEST,
+
 	NONE
 };
 

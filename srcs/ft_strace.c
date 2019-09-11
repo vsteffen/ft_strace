@@ -86,24 +86,29 @@ bool		handle_sig_and_wait_syscall(pid_t child, int *status)
 	}
 }
 
-enum e_arch_type	get_syscall_arch(pid_t child, struct iovec *io)
+enum e_syscall_arch	get_syscall_arch(pid_t child, struct iovec *io)
 {
-	static uint8_t count_for_first_syscall = 0;
+	#ifdef __x86_64__
+		static bool first_time = true;
+	#endif
 
 	if (ptrace(PTRACE_GETREGSET, child, NT_PRSTATUS, io)) {
 		printf("ft_strace: ptrace: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	if (count_for_first_syscall < 2)
-	{
-		if (count_for_first_syscall == 1 && io->iov_len == sizeof(struct i386_user_regs_struct))
-			printf("ft_strace: [ Process PID=%d runs in 32 bit mode. ]\n", child);
-		count_for_first_syscall++;
+
+	if (io->iov_len == sizeof(struct i386_user_regs_struct)) {
+		#ifdef __x86_64__
+			if (first_time) {
+				first_time = false;
+				fprintf(stderr, "ft_strace: [ Process PID=%d runs in 32 bit mode. ]\n", child);
+			}
+		#endif
+		return SYSCALL_32;
 	}
-	if (io->iov_len == sizeof(struct i386_user_regs_struct))
-		return I386;
-	else
-		return X86_64;
+	else {
+		return SYSCALL_64;
+	}
 }
 
 void		initialize_tracer(pid_t child) {
@@ -132,7 +137,7 @@ void		get_registers_values(union x86_64_regs *regs, int child) {
 
 void		tracer(pid_t child)
 {
-	enum e_arch_type arch_type;
+	enum e_syscall_arch syscall_arch;
 	union x86_64_regs regs;
 	struct iovec io = {
 		.iov_base = &regs,
@@ -146,8 +151,8 @@ void		tracer(pid_t child)
 		if (!handle_sig_and_wait_syscall(child, &status))
 			break;
 		get_registers_values(&regs, child);
-		arch_type = get_syscall_arch(child, &io);
-		if (arch_type == I386) {
+		syscall_arch = get_syscall_arch(child, &io);
+		if (syscall_arch == SYSCALL_32) {
 			if (!get_and_print_syscall_32(&regs, child, &status)) break ;
 		}
 		else {
