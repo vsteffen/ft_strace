@@ -15,7 +15,8 @@ size_t		print_escape_string(const uint8_t *str, const size_t size, const size_t 
 		exit(EXIT_FAILURE);
 	}
 
-	while ((size_t)(str - ptr) < size) {
+	size_t max_size = (size < max_print_size ? size : max_print_size);
+	while ((size_t)(str - ptr) < max_size) {
 		if (*str == '\f') {
 			memcpy(escape_str + i, "\\f", 3);
 			i += 2;
@@ -73,7 +74,7 @@ static size_t print_float(uintmax_t reg, __unused pid_t child, __unused size_t s
 static size_t print_double(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return fprintf(stderr, "%f", (double)reg); }
 static size_t print_longdouble(uintmax_t reg, __unused pid_t child, __unused size_t size)	{ return fprintf(stderr, "%Lf", (long double)reg); }
 
-static size_t print_addr(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return fprintf(stderr, "0x%ju", (uintmax_t)reg); }
+static size_t print_addr(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return (reg ? fprintf(stderr, "%p", (void *)reg) : fprintf(stderr, "NULL")); }
 
 static size_t print_buff(uintmax_t reg, __unused pid_t child, size_t size)					{
 	uint8_t		str[CEIL_MULTIPLE(BUFF_UNESCAPE_MAX_SIZE + 1, sizeof(uintmax_t))];
@@ -87,7 +88,7 @@ static size_t print_buff(uintmax_t reg, __unused pid_t child, size_t size)					{
 		total_read += sizeof(tmp);
 	}
 	str[total_read] = 0;
-	return (print_escape_string(str, total_read, BUFF_UNESCAPE_MAX_SIZE));
+	return (print_escape_string(str, (tmp == (uintmax_t)-1 ? total_read : size), BUFF_UNESCAPE_MAX_SIZE));
 }
 
 static size_t print_str(uintmax_t reg, pid_t child, __unused size_t size)					{
@@ -116,6 +117,7 @@ size_t		print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size
 	static size_t (* const print_fn[])(uintmax_t, pid_t, size_t) = {
 	# include "print_function.h"
 	};
+	// fprintf(stderr, " VAL [%ju] ", reg);
 	return (print_fn[type](reg, child, size));
 }
 
@@ -178,6 +180,7 @@ bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 
 	for (uint8_t i = 0; syscall_data->args[i] != NONE && i < MAX_ARG; i++) {
 		if (i > 0) nb_char_print += fprintf(stderr, ", ");
+		// fprintf(stderr, " VAL [%hx] ", regs->i386_r.ebx);
 		nb_char_print += print_arg((*(uint32_t *)((void *)regs + regs_offset[i])), syscall_data->args[i], child, 0);
 	}
 	return print_ret_val(regs, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
