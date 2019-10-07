@@ -1,12 +1,12 @@
 #ifndef FT_STRACE_H
 # define FT_STRACE_H
 
-# define _XOPEN_SOURCE
-# define _XOPEN_SOURCE_EXTENDED
+# define _GNU_SOURCE
 
 # include <unistd.h>
 # include <stdlib.h>
 # include <stdio.h>
+
 # include <stdint.h>
 # include <ctype.h>
 # include <stddef.h>
@@ -28,6 +28,7 @@
 # define __unused __attribute__((unused))
 # define COUNT_OF(ptr) (sizeof(ptr) / sizeof((ptr)[0]))
 
+# define SI_CODE_UNKNWON_TO_STR "UNKNWON"
 
 struct s_si_code_regular {
 	const int	si_code;

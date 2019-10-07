@@ -53,7 +53,8 @@ IDENTIFY_TYPE () {
 
 	# Unknown
 	if [[ "${SPLIT[0]}" == "..." ]]; then
-		RET_TYPE="T_ULLINT"
+		IS_UNKNOWN=true
+		RET_TYPE="T_UNKNOWN"
 		return
 	fi
 
@@ -122,7 +123,7 @@ GEN_SYSCALL_FILE () {
 			# add entry for syscall number with no reference
 			if [[ $SYSCALL_NBR != $((SYSCALL_PREV_NBR+1)) ]]; then
 				for i in $(eval "echo {"$(($SYSCALL_PREV_NBR+1))".."$(($SYSCALL_NBR-1))"}"); do
-					printf "[%3d] = {\"Unused syscall number\", {T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE}, $3},$UNUSED_SYSCALL_NB\n" "$i" | tee -a $2
+					printf "[%3d] = {\"syscall_0x%x\", {T_HEX, T_HEX, T_HEX, T_HEX, T_HEX, T_HEX, T_HEX}, $3},$UNUSED_SYSCALL_NB\n" "$i" "$i" | tee -a $2
 				done
 			fi
 			SYSCALL_PREV_NBR=$SYSCALL_NBR

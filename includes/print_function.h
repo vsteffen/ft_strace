@@ -13,6 +13,7 @@
 [T_DOUBLE	] = &print_double,
 [T_LDOUBLE	] = &print_longdouble,
 [T_ADDR		] = &print_addr,
+[T_HEX		] = &print_hex,
 [T_BUFF		] = &print_buff,
 [T_STR		] = &print_str,
 [T_UNKNOWN	] = &print_longlongint,

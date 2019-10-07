@@ -38,6 +38,7 @@ enum e_type_syscall_arg {
 	T_DOUBLE,
 	T_LDOUBLE,
 	T_ADDR,
+	T_HEX,
 	T_BUFF,
 	T_STR,
 	T_UNKNOWN,

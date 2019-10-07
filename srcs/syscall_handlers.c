@@ -6,7 +6,7 @@ bool		syscall_read_write_handler(union x86_64_regs *regs, const struct s_syscall
 	size_t nb_char_print = 0;
 	bool is_exited = false;
 
-	nb_char_print += fprintf(stderr, "%s(", syscall_data->name);
+	nb_char_print += dprintf(STDERR_FILENO, "%s(", syscall_data->name);
 
 	if (syscall_arch == SYSCALL_32) {
 		nb_char_print += print_arg((uint32_t)regs->i386_r.ebx, syscall_data->args[0], child, 0);
@@ -20,15 +20,15 @@ bool		syscall_read_write_handler(union x86_64_regs *regs, const struct s_syscall
 	if (!handle_sig_and_wait_syscall(child, status)) is_exited = true;
 
 	if (syscall_arch == SYSCALL_32) {
-		nb_char_print += fprintf(stderr, ", ");
+		nb_char_print += dprintf(STDERR_FILENO, ", ");
 		nb_char_print += print_arg((uint32_t)regs->i386_r.ecx, syscall_data->args[1], child, buff_size);
-		nb_char_print += fprintf(stderr, ", ");
+		nb_char_print += dprintf(STDERR_FILENO, ", ");
 		nb_char_print += print_arg((uint32_t)regs->i386_r.edx, syscall_data->args[2], child, 0);
 	}
 	else {
-		nb_char_print += fprintf(stderr, ", ");
+		nb_char_print += dprintf(STDERR_FILENO, ", ");
 		nb_char_print += print_arg(regs->x86_64_r.rsi, syscall_data->args[1], child, buff_size);
-		nb_char_print += fprintf(stderr, ", ");
+		nb_char_print += dprintf(STDERR_FILENO, ", ");
 		nb_char_print += print_arg(regs->x86_64_r.rdx, syscall_data->args[2], child, 0);
 	}
 

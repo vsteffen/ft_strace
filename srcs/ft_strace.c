@@ -30,7 +30,7 @@ const char		*si_code_to_str(siginfo_t *si)
 			if (si->si_code == si_code_reg[i].si_code)
 				return (si_code_reg[i].to_str);
 		}
-		return ("UNKNOWN");
+		return (SI_CODE_UNKNWON_TO_STR);
 	}
 	for (uint8_t i = 0; i < COUNT_OF(si_code); i++)
 	{
@@ -41,12 +41,12 @@ const char		*si_code_to_str(siginfo_t *si)
 				if (si->si_code == si_code[i].si_code)
 					return (si_code[i].to_str);
 				if (si->si_signo != si_code[i].si_signo)
-					return ("UNKNOWN");
+					return (SI_CODE_UNKNWON_TO_STR);
 			}
 
 		}
 	}
-	return ("UNKNOWN");
+	return (SI_CODE_UNKNWON_TO_STR);
 }
 
 const char		*si_signo_to_str(siginfo_t *si)
@@ -101,7 +101,7 @@ enum e_syscall_arch	get_syscall_arch(pid_t child, struct iovec *io)
 		#ifdef __x86_64__
 			if (first_time) {
 				first_time = false;
-				fprintf(stderr, "ft_strace: [ Process PID=%d runs in 32 bit mode. ]\n", child);
+				dprintf(STDERR_FILENO, "ft_strace: [ Process PID=%d runs in 32 bit mode. ]\n", child);
 			}
 		#endif
 		return SYSCALL_32;
