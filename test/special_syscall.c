@@ -36,10 +36,12 @@ int main(int argc, char *argv[])
 		syscall(328); // eventfd2
 		syscall(343); // clock_adjtime
 		syscall(386); // rseq
-
 	#else
 		syscall(66); // mremap
 		syscall(72); // fcntl
+		syscall(221); // fadvise64
+		syscall(214); // epoll_ctl_old
+		syscall(215); // epoll_wait_old
 	#endif
 
 }
