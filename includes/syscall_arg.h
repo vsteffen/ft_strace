@@ -24,29 +24,29 @@ struct s_syscall_state {
 };
 
 enum e_type_syscall_arg {
-	CHAR,
-	SHORT,
-	INT,
-	LINT,
-	LLINT,
-	UCHAR,
-	USHORT,
-	UINT,
-	ULINT,
-	ULLINT,
-	FLOAT,
-	DOUBLE,
-	LDOUBLE,
-	ADDR,
-	BUFF,
-	STR,
-	UNKNOWN,
+	T_CHAR,
+	T_SHORT,
+	T_INT,
+	T_LINT,
+	T_LLINT,
+	T_UCHAR,
+	T_USHORT,
+	T_UINT,
+	T_ULINT,
+	T_ULLINT,
+	T_FLOAT,
+	T_DOUBLE,
+	T_LDOUBLE,
+	T_ADDR,
+	T_BUFF,
+	T_STR,
+	T_UNKNOWN,
 
 	T_CADDR_T,
 	T_SIGHANDLER_T,
-	E_PTRACE_REQUEST,
+	T_E_PTRACE_REQUEST,
 
-	NONE
+	T_NONE
 };
 
 

@@ -24,6 +24,7 @@ COMPILED_GET_REAL_TYPE=$?
 
 UNKNOWN_ARG=" // Unknown type"
 UNKNOWN_PROTYPE=" // Failed to retrieve prototype"
+UNUSED_SYSCALL_NB=" // Unused syscall"
 UNIMPLEMENTED_SYSCALL=" // Unimplemented syscall"
 
 IDENTIFY_TYPE () {
@@ -36,41 +37,41 @@ IDENTIFY_TYPE () {
 			PTR_NOT_ATTACH_TO_WORD=`echo "$1" | grep -e '.*\* \*' -e '.*\* .*\['`
 			IS_MULTI_ARRAY=`echo "${SPLIT[-1]}" | grep -e '\*\*.*' -e '\*.*\['`
 			if [ -z "$IS_MULTI_ARRAY" -a -z "$PTR_NOT_ATTACH_TO_WORD" ]; then
-				RET_TYPE="STR"
+				RET_TYPE="T_STR"
 				return
 			fi
 		fi
-		RET_TYPE="ADDR"
+		RET_TYPE="T_ADDR"
 		return
 	fi
 
 	# void
 	if [[ "${SPLIT[0]}" == "void" ]]; then
-		RET_TYPE="NONE"
+		RET_TYPE="T_NONE"
 		return
 	fi
 
 	# Unknown
 	if [[ "${SPLIT[0]}" == "..." ]]; then
-		RET_TYPE="ULLINT"
+		RET_TYPE="T_ULLINT"
 		return
 	fi
 
 	# struct
 	if [[ "${SPLIT[0]}" == "struct" ]]; then
-		RET_TYPE=`echo "S_${SPLIT[1]}" | sed -e 's/S_*/S_/g' | tr [a-z] [A-Z]`
+		RET_TYPE=`echo "T_S_${SPLIT[1]}" | sed -e 's/T_S_*/T_S_/g' | tr [a-z] [A-Z]`
 		return
 	fi
 
 	# enum
 	if [[ "${SPLIT[0]}" == "enum" ]]; then
-		RET_TYPE=`echo "E_${SPLIT[1]}" | sed -e 's/E_*/E_/g' | tr [a-z] [A-Z]`
+		RET_TYPE=`echo "T_E_${SPLIT[1]}" | sed -e 's/T_E_*/T_E_/g' | tr [a-z] [A-Z]`
 		return
 	fi
 
 	# union
 	if [[ "${SPLIT[0]}" == "union" ]]; then
-		RET_TYPE=`echo "U_${SPLIT[1]}" | sed -e 's/U_*/U_/g' | tr [a-z] [A-Z]`
+		RET_TYPE=`echo "T_U_${SPLIT[1]}" | sed -e 's/T_U_*/T_U_/g' | tr [a-z] [A-Z]`
 		return
 	fi
 
@@ -78,24 +79,24 @@ IDENTIFY_TYPE () {
 	if [ "${SPLIT[0]}" != "unsigned" -a "${SPLIT[0]}" != "long" -a "${SPLIT[0]}" != "int" ]; then
 		if [ $COMPILED_GET_REAL_TYPE -eq 0 ]; then
 			RET_TYPE=`"$PATH_GET_REAL_TYPE" "${SPLIT[0]}"`
-			if [ "$RET_TYPE" == "UNKNOWN" ]; then
+			if [ "$RET_TYPE" == "T_UNKNOWN" ]; then
 				IS_UNKNOWN=true
 			fi
 			return
 		fi
 		IS_UNKNOWN=true
-		RET_TYPE="UNKNOWN"
+		RET_TYPE="T_UNKNOWN"
 		return
 	fi
 
 	# [unsigned] [long] [long] int
-	TMP_TYPE=
+	TMP_TYPE="T_"
 	LENGTH_SPLIT=${#SPLIT[@]}
 	COUNT_SPLIT=0
 	while [ $COUNT_SPLIT -lt $LENGTH_SPLIT ]
 	do
 		if [[ "${SPLIT[$COUNT_SPLIT]}" == "unsigned" ]]; then
-			TMP_TYPE="U""$TMP_TYPE"
+			TMP_TYPE+="U"
 		elif [[ "${SPLIT[$COUNT_SPLIT]}" == "long" ]]; then
 			TMP_TYPE+="L"		
 		elif [[ "${SPLIT[$COUNT_SPLIT]}" == "int" ]]; then
@@ -111,21 +112,29 @@ IDENTIFY_TYPE () {
 GEN_SYSCALL_FILE () {
 	rm -f "$2"
 	SYSCALL_FAIL=
-	SYSCALL_COUNT=0
+	SYSCALL_PREV_NBR=-1
 	while IFS= read -r LINE
 	do
 		if [[ "$LINE" == "$PATTERN_SYS_NB"* ]]; then
+			SYSCALL=`echo "$LINE" | cut -c $((${#PATTERN_SYS_NB} + 1))- | awk '{print $1;}'`
+			SYSCALL_NBR=`echo "$LINE" | cut -c $((${#PATTERN_SYS_NB} + 1))- | awk '{print $2;}'`
+
+			# add entry for syscall number with no reference
+			if [[ $SYSCALL_NBR != $((SYSCALL_PREV_NBR+1)) ]]; then
+				for i in $(eval "echo {"$(($SYSCALL_PREV_NBR+1))".."$(($SYSCALL_NBR-1))"}"); do
+					printf "[%3d] = {\"Unused syscall number\", {T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE}, $3},$UNUSED_SYSCALL_NB\n" "$i" | tee -a $2
+				done
+			fi
+			SYSCALL_PREV_NBR=$SYSCALL_NBR
 
 			#Find if man page exist
 			# sudo apt-get install manpages-dev
-			SYSCALL=`echo "$LINE" | cut -c $((${#PATTERN_SYS_NB} + 1))- | awk '{print $1;}'`
 			MAN_PAGE=`man -P cat 2 "$SYSCALL" 2> /dev/null`
 			if [ $? -ne 0 ]; then
 				MAN_PAGE=`man -P cat 3 "$SYSCALL" 2> /dev/null`
 				if [ $? -ne 0 ]; then
-					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, LLINT}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_COUNT" | tee -a $2
+					printf "[%3d] = {\"$SYSCALL\", {T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_LLINT}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_NBR" | tee -a $2
 					SYSCALL_FAIL+="\n$SYSCALL"
-					SYSCALL_COUNT=$((SYSCALL_COUNT+1))
 					continue
 				fi
 			fi
@@ -144,12 +153,11 @@ GEN_SYSCALL_FILE () {
 			if [ -z "$PROTOTYPE" ]; then
 				IS_UNIMPLEMENTED=`echo $MAN_PAGE | cut -c1-"$PATTERN_UNIMPLEMENTED_LENGTH"`
 				if [ "$IS_UNIMPLEMENTED" == "$PATTERN_UNIMPLEMENTED" ]; then
-					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, LLINT}, $3},$UNIMPLEMENTED_SYSCALL\n" "$SYSCALL_COUNT" | tee -a $2
+					printf "[%3d] = {\"$SYSCALL\", {T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_LLINT}, $3},$UNIMPLEMENTED_SYSCALL\n" "$SYSCALL_NBR" | tee -a $2
 				else
-					printf "[%3d] = {\"$SYSCALL\", {NONE, NONE, NONE, NONE, NONE, NONE, LLINT}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_COUNT" | tee -a $2
+					printf "[%3d] = {\"$SYSCALL\", {T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_LLINT}, $3},$UNKNOWN_PROTYPE\n" "$SYSCALL_NBR" | tee -a $2
 				fi
 				SYSCALL_FAIL+="\n$SYSCALL"
-				SYSCALL_COUNT=$((SYSCALL_COUNT+1))
 				continue
 			fi
 
@@ -172,13 +180,13 @@ GEN_SYSCALL_FILE () {
 
 
 			# Generate our syscall prototype
-			PRINT_PROTOTYPE=`printf "[%3d] = {\"$SYSCALL\", {" "$SYSCALL_COUNT"`
+			PRINT_PROTOTYPE=`printf "[%3d] = {\"$SYSCALL\", {" "$SYSCALL_NBR"`
 			ARGS=`echo "$PROTOTYPE" | awk -F'[()]' '{print $2}'`
 			IFS=',' read -ra ARRAY_ARG <<< "$ARGS"
 			COUNT_ARG=0
 			for ARG in "${ARRAY_ARG[@]}"
 			do
-				RET_TYPE="NONE"
+				RET_TYPE="T_NONE"
 				IS_UNKNOWN=false
 				IDENTIFY_TYPE "$ARG"
 				if [ $COUNT_ARG -gt 0 ]; then
@@ -189,7 +197,7 @@ GEN_SYSCALL_FILE () {
 				COUNT_ARG=$((COUNT_ARG+1))
 			done
 			if [ "$COUNT_ARG" -lt 6 ]; then
-				PRINT_PROTOTYPE+=`printf '%0.s, NONE' $(seq 1 $((6 - COUNT_ARG)))`
+				PRINT_PROTOTYPE+=`printf '%0.s, T_NONE' $(eval "echo {1.."$((6-COUNT_ARG))"}")`
 			fi
 			RET_VAL=`echo "$PROTOTYPE" | sed 's/[(].*//g'`
 			IDENTIFY_TYPE "$RET_VAL"
@@ -201,7 +209,6 @@ GEN_SYSCALL_FILE () {
 				PRINT_PROTOTYPE+="}, $3},\n"
 			fi
 			printf "$PRINT_PROTOTYPE" | tee -a $2
-			SYSCALL_COUNT=$((SYSCALL_COUNT+1))
 		fi
 	done < "$1"
 

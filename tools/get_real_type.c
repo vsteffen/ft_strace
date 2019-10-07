@@ -22,15 +22,15 @@
 
 #define GET_ARG_TYPE(expr) \
 	(_Generic((expr), \
-		char: "CHAR", unsigned char: "UCHAR", \
-		short: "SHORT", unsigned short: "USHORT", \
-		int: "INT", unsigned int: "UINT", \
-		long: "LINT", unsigned long: "ULINT", \
-		long long: "LLINT", unsigned long long: "ULLINT", \
-		float: "FLOAT", \
-		double: "DOUBLE", \
-		long double: "LDOUBLE", \
-		default: "UNKNOWN"))
+		char: "T_CHAR", unsigned char: "T_UCHAR", \
+		short: "T_SHORT", unsigned short: "T_USHORT", \
+		int: "T_INT", unsigned int: "T_UINT", \
+		long: "T_LINT", unsigned long: "T_ULINT", \
+		long long: "T_LLINT", unsigned long long: "T_ULLINT", \
+		float: "T_FLOAT", \
+		double: "T_DOUBLE", \
+		long double: "T_LDOUBLE", \
+		default: "T_UNKNOWN"))
 
 
 int		main(int ac, char **av) {

@@ -117,11 +117,14 @@ size_t		print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size
 	static size_t (* const print_fn[])(uintmax_t, pid_t, size_t) = {
 	# include "print_function.h"
 	};
-	// fprintf(stderr, " VAL [%ju] ", reg);
+
 	return (print_fn[type](reg, child, size));
 }
 
 bool		print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t child, int *status, size_t nb_char_print, struct s_syscall_state state) {
+	const char *const errnoent[] = {
+		#include "errnoent.h"
+	};
 	nb_char_print += fprintf(stderr, ") ");
 	if (nb_char_print < LINE_MIN_SIZE)
 		fprintf(stderr, "%*s", LINE_MIN_SIZE - (int)nb_char_print, "");
@@ -131,14 +134,25 @@ bool		print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t
 	}
 	get_registers_values(regs, child);
 	fprintf(stderr, "= ");
-	if (state.arch == SYSCALL_32)
+	if (state.arch == SYSCALL_32) {
+		uint32_t tmp;
 		#ifdef __x86_64__
-			print_arg((uint32_t)regs->x86_64_r.rax, type, child, 0);
+			tmp = (uint32_t)regs->x86_64_r.rax;
 		#else
-			print_arg(regs->i386_r.eax, type, child, 0);
+			tmp = regs->i386_r.eax;
 		#endif
-	else
-		print_arg(regs->x86_64_r.rax, type, child, 0);
+		if (tmp <= -1U && tmp >= -4096U)
+			fprintf(stderr, "-1 %s (%s)", errnoent[-tmp], strerror(-tmp));
+		else
+			print_arg(tmp, type, child, 0);
+	}
+	else {
+		if (regs->x86_64_r.rax <= -1UL && regs->x86_64_r.rax >= -4096UL)
+			fprintf(stderr, "-1 %s (%s)", errnoent[-regs->x86_64_r.rax], strerror(-regs->x86_64_r.rax));
+		else
+			print_arg(regs->x86_64_r.rax, type, child, 0);
+
+	}
 	fprintf(stderr, "\n");
 	return (true);
 }
@@ -157,7 +171,7 @@ bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 	size_t nb_char_print = 0;
 	nb_char_print += fprintf(stderr, "%s(", syscall_data->name);
 
-	for (uint8_t i = 0; syscall_data->args[i] != NONE && i < MAX_ARG; i++) {
+	for (uint8_t i = 0; syscall_data->args[i] != T_NONE && i < MAX_ARG; i++) {
 		if (i > 0) nb_char_print += fprintf(stderr, ", ");
 		nb_char_print += print_arg(*(uintmax_t *)((void *)regs + regs_offset[i]), syscall_data->args[i], child, 0);
 	}
@@ -178,9 +192,8 @@ bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 	size_t nb_char_print = 0;
 	nb_char_print += fprintf(stderr, "%s(", syscall_data->name);
 
-	for (uint8_t i = 0; syscall_data->args[i] != NONE && i < MAX_ARG; i++) {
+	for (uint8_t i = 0; syscall_data->args[i] != T_NONE && i < MAX_ARG; i++) {
 		if (i > 0) nb_char_print += fprintf(stderr, ", ");
-		// fprintf(stderr, " VAL [%hx] ", regs->i386_r.ebx);
 		nb_char_print += print_arg((*(uint32_t *)((void *)regs + regs_offset[i])), syscall_data->args[i], child, 0);
 	}
 	return print_ret_val(regs, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
