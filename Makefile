@@ -36,6 +36,8 @@ ROOT  	=	$(shell /bin/pwd)
 OPATH 	=	$(ROOT)/objs
 CPATH 	=	$(ROOT)/srcs
 HPATH 	=	-I $(ROOT)/includes
+TESTPATH	=	$(ROOT)/test
+TESTBINPATH	=	$(ROOT)/bin_test
 
 SRC =	ft_strace.c \
 		check_args.c \
@@ -74,8 +76,8 @@ define PRINT_STATUS
 	$(if $(filter $(3),-n),printf $(1),echo ']')
 endef
 
-.PHONY: all clean fclean re
-.SILENT: $(NAME) $(OPATH) $(OPATH)/%.o clean fclean re
+.PHONY: all clean fclean re test test-clean
+.SILENT: $(NAME) $(OPATH) $(OPATH)/%.o clean fclean re test test-clean
 
 all: $(NAME)
 
@@ -109,3 +111,22 @@ fclean: clean
 
 re: fclean
 	$(MAKE) -C $(ROOT) -j$(NPROCS) -s
+
+test: $(NAME)
+	printf $(PROJECT)": Building tests ... "
+	$(MKDIR) $(TESTBINPATH)
+	$(CC) $(TESTPATH)/write.c -o $(TESTBINPATH)/32 -m32
+	$(CC) $(TESTPATH)/write.c -o $(TESTBINPATH)/64
+	$(CC) $(TESTPATH)/execve.c -o $(TESTBINPATH)/execve
+	$(CC) $(TESTPATH)/special_syscall.c -o $(TESTBINPATH)/special_32 -m32
+	$(CC) $(TESTPATH)/special_syscall.c -o $(TESTBINPATH)/special_64
+	$(CC) $(TESTPATH)/corr1.c -o $(TESTBINPATH)/corr1
+	$(CC) $(TESTPATH)/corr2.c -o $(TESTBINPATH)/corr2
+	$(CC) $(TESTPATH)/corr3.c -o $(TESTBINPATH)/corr3
+	$(CC) $(TESTPATH)/corr4.c -o $(TESTBINPATH)/corr4
+	$(CC) $(TESTPATH)/corr5.c -o $(TESTBINPATH)/corr5 -pthread
+	$(call PRINT_STATUS,DONE,SUCCESS)
+
+test-clean:
+	$(RM) -rf $(TESTBINPATH)
+	echo $(PROJECT)": tests clean"

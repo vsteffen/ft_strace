@@ -1,5 +1,5 @@
-[  0] = {"read", {T_INT, T_ADDR, T_ULINT, T_NONE, T_NONE, T_NONE, T_LINT}, &syscall64_generic_handler},
-[  1] = {"write", {T_INT, T_ADDR, T_ULINT, T_NONE, T_NONE, T_NONE, T_LINT}, &syscall64_generic_handler},
+[  0] = {"read", {T_INT, T_STR, T_ULINT, T_NONE, T_NONE, T_NONE, T_LINT}, &syscall_read_write_handler},
+[  1] = {"write", {T_INT, T_STR, T_ULINT, T_NONE, T_NONE, T_NONE, T_LINT}, &syscall_read_write_handler},
 [  2] = {"open", {T_STR, T_INT, T_UINT, T_NONE, T_NONE, T_NONE, T_INT}, &syscall64_generic_handler},
 [  3] = {"close", {T_INT, T_NONE, T_NONE, T_NONE, T_NONE, T_NONE, T_INT}, &syscall64_generic_handler},
 [  4] = {"stat", {T_STR, T_ADDR, T_NONE, T_NONE, T_NONE, T_NONE, T_INT}, &syscall64_generic_handler},

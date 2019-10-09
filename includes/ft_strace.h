@@ -28,6 +28,7 @@
 # define __unused __attribute__((unused))
 # define COUNT_OF(ptr) (sizeof(ptr) / sizeof((ptr)[0]))
 
+
 # define SI_CODE_UNKNWON_TO_STR "UNKNWON"
 
 struct s_si_code_regular {
@@ -39,6 +40,11 @@ struct s_si_code {
 	const int	si_signo;
 	const int	si_code;
 	const char	*to_str;
+};
+
+enum e_si_life {
+  SI_DEAD,
+  SI_ALIVE
 };
 
 struct x86_64_user_regs_struct

@@ -5,7 +5,6 @@
 
 int main(int argc, char *argv[])
 {
-
 	#ifndef __LP64__
 		syscall(17); // unimplemented
 		syscall(222); // unused
@@ -36,12 +35,11 @@ int main(int argc, char *argv[])
 		syscall(328); // eventfd2
 		syscall(343); // clock_adjtime
 		syscall(386); // rseq
-	#else
+	#else // 32 bits
 		syscall(66); // mremap
 		syscall(72); // fcntl
 		syscall(221); // fadvise64
 		syscall(214); // epoll_ctl_old
 		syscall(215); // epoll_wait_old
 	#endif
-
 }

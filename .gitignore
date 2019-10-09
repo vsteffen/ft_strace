@@ -1,7 +1,5 @@
-32
-64
-execve
 get_real_type
+/bin_test
 tools/syscall_table32.h
 tools/syscall_table64.h
 *.o
