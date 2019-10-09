@@ -199,7 +199,7 @@ void		start_tracing(char *bin, char **av_bin, char **env)
 	pid_t		child;
 
 	if ((child = fork()) == -1)
-		die("waitpid", child);
+		die("fork", child);
 	if (child == 0)
 		tracee(bin, av_bin, env);
 	else
