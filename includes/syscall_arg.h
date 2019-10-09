@@ -54,7 +54,7 @@ enum e_type_syscall_arg {
 struct s_syscall_data {
 	const char *name;
 	const enum e_type_syscall_arg args[7];
-	bool (* const handler)(union x86_64_regs *, const struct s_syscall_data *, pid_t, enum e_syscall_arch, int *);
+	bool (* const handler)(union x86_64_regs *, const struct s_syscall_data *, pid_t, enum e_syscall_arch);
 };
 
 

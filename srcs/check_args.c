@@ -52,6 +52,6 @@ char		*get_bin_path(char *bin_name)
 			path = ++delim;
 		}
 	}
-	printf("ft_strace: Can't stat '%s': No such file or directory\n", bin_name);
+	dprintf(STDERR_FILENO, "ft_strace: Can't stat '%s': No such file or directory\n", bin_name);
 	return (NULL);
 }

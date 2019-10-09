@@ -80,25 +80,30 @@ static size_t print_hex(uintmax_t reg, __unused pid_t child, __unused size_t siz
 static size_t print_buff(uintmax_t reg, __unused pid_t child, size_t size)					{
 	uint8_t		str[CEIL_MULTIPLE(BUFF_UNESCAPE_MAX_SIZE + 1, sizeof(uintmax_t))];
 	size_t		total_read = 0;
+	size_t		max_size;
 	uintmax_t	tmp;
 
-	while (total_read < size && total_read < BUFF_UNESCAPE_MAX_SIZE) {
+	max_size = (size < BUFF_UNESCAPE_MAX_SIZE) ? size : BUFF_UNESCAPE_MAX_SIZE;
+	while (total_read < max_size) {
 		tmp = ptrace(PTRACE_PEEKDATA, child, reg + total_read, NULL);
 		if (tmp == (uintmax_t)-1) break;
 		memcpy(str + total_read, &tmp, sizeof(tmp));
 		total_read += sizeof(tmp);
 	}
 	str[total_read] = 0;
-	return (print_escape_string(str, (tmp == (uintmax_t)-1 ? total_read : size), BUFF_UNESCAPE_MAX_SIZE));
+	if (total_read > size) total_read = size;
+	return (print_escape_string(str, total_read, BUFF_UNESCAPE_MAX_SIZE));
 }
 
 static size_t print_str(uintmax_t reg, pid_t child, __unused size_t size)					{
 	uint8_t		str[CEIL_MULTIPLE(STR_UNESCAPE_MAX_SIZE + 1, sizeof(uintmax_t))];
 	size_t		total_read = 0;
+	size_t		max_size;
 	uintmax_t	tmp;
 	void		*ptr;
 
-	while (total_read < STR_UNESCAPE_MAX_SIZE) {
+	max_size = (size < STR_UNESCAPE_MAX_SIZE) ? size : STR_UNESCAPE_MAX_SIZE;
+	while (total_read < max_size) {
 		tmp = ptrace(PTRACE_PEEKDATA, child, reg + total_read, NULL);
 		if (tmp == (uintmax_t)-1) break;
 		memcpy(str + total_read, &tmp, sizeof(tmp));
@@ -122,14 +127,14 @@ size_t		print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size
 	return (print_fn[type](reg, child, size));
 }
 
-bool		print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t child, int *status, size_t nb_char_print, struct s_syscall_state state) {
+bool		print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t child, size_t nb_char_print, struct s_syscall_state state) {
 	const char *const errnoent[] = {
 		#include "errnoent.h"
 	};
 	nb_char_print += dprintf(STDERR_FILENO, ") ");
 	if (nb_char_print < LINE_MIN_SIZE)
 		dprintf(STDERR_FILENO, "%*s", LINE_MIN_SIZE - (int)nb_char_print, "");
-	if ((state.time_status == SYSCALL_BEGIN && !handle_sig_and_wait_syscall(child, status)) || state.is_exited == true) {
+	if ((state.time_status == SYSCALL_BEGIN && !handle_sig_and_wait_syscall(child, SI_ALIVE)) || state.is_exited == true) {
 		dprintf(STDERR_FILENO, "= ?\n");
 		return (false);
 	}
@@ -145,20 +150,20 @@ bool		print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t
 		if (tmp <= -1U && tmp >= -4096U)
 			dprintf(STDERR_FILENO, "-1 %s (%s)", errnoent[-tmp], strerror(-tmp));
 		else
-			print_arg(tmp, type, child, 0);
+			print_arg(tmp, type, child, -1);
 	}
 	else {
 		if (regs->x86_64_r.rax <= -1UL && regs->x86_64_r.rax >= -4096UL)
 			dprintf(STDERR_FILENO, "-1 %s (%s)", errnoent[-regs->x86_64_r.rax], strerror(-regs->x86_64_r.rax));
 		else
-			print_arg(regs->x86_64_r.rax, type, child, 0);
+			print_arg(regs->x86_64_r.rax, type, child, -1);
 
 	}
 	dprintf(STDERR_FILENO, "\n");
 	return (true);
 }
 
-bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch, int *status)
+bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch)
 {
 	static const size_t regs_offset [] = {
 		offsetof(struct x86_64_user_regs_struct, rdi),
@@ -174,12 +179,12 @@ bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 
 	for (uint8_t i = 0; syscall_data->args[i] != T_NONE && i < MAX_ARG; i++) {
 		if (i > 0) nb_char_print += dprintf(STDERR_FILENO, ", ");
-		nb_char_print += print_arg(*(uintmax_t *)((void *)regs + regs_offset[i]), syscall_data->args[i], child, 0);
+		nb_char_print += print_arg(*(uintmax_t *)((void *)regs + regs_offset[i]), syscall_data->args[i], child, -1);
 	}
-	return print_ret_val(regs, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
+	return print_ret_val(regs, syscall_data->args[6], child, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
 }
 
-bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch, int *status)
+bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch)
 {
 	static const size_t regs_offset [] = {
 		offsetof(struct i386_user_regs_struct, ebx),
@@ -195,12 +200,12 @@ bool		syscall32_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 
 	for (uint8_t i = 0; syscall_data->args[i] != T_NONE && i < MAX_ARG; i++) {
 		if (i > 0) nb_char_print += dprintf(STDERR_FILENO, ", ");
-		nb_char_print += print_arg((*(uint32_t *)((void *)regs + regs_offset[i])), syscall_data->args[i], child, 0);
+		nb_char_print += print_arg((*(uint32_t *)((void *)regs + regs_offset[i])), syscall_data->args[i], child, -1);
 	}
-	return print_ret_val(regs, syscall_data->args[6], child, status, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
+	return print_ret_val(regs, syscall_data->args[6], child, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
 }
 
-bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child, int *status) {
+bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child) {
 	static const struct s_syscall_data syscall64[] = {
 	# include "syscall64.h"
 	};
@@ -210,10 +215,10 @@ bool		get_and_print_syscall_64(union x86_64_regs *regs, pid_t child, int *status
 		exit(EXIT_FAILURE);
 	}
 
-	return syscall64[regs->x86_64_r.orig_rax].handler(regs, &syscall64[regs->x86_64_r.orig_rax], child, SYSCALL_64, status);
+	return syscall64[regs->x86_64_r.orig_rax].handler(regs, &syscall64[regs->x86_64_r.orig_rax], child, SYSCALL_64);
 }
 
-bool		get_and_print_syscall_32(union x86_64_regs *regs, pid_t child, int *status) {
+bool		get_and_print_syscall_32(union x86_64_regs *regs, pid_t child) {
 	static const struct s_syscall_data syscall32[] = {
 	# include "syscall32.h"
 	};
@@ -223,6 +228,6 @@ bool		get_and_print_syscall_32(union x86_64_regs *regs, pid_t child, int *status
 		exit(EXIT_FAILURE);
 	}
 
-	return syscall32[regs->i386_r.orig_eax].handler(regs, &syscall32[regs->i386_r.orig_eax], child, SYSCALL_32, status);
+	return syscall32[regs->i386_r.orig_eax].handler(regs, &syscall32[regs->i386_r.orig_eax], child, SYSCALL_32);
 }
 

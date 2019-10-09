@@ -5,10 +5,8 @@ void		tracee(char *bin, char **av_bin, char **env)
 	int		status;
 
 	kill(getpid(), SIGSTOP);
-	if ((status = execve(bin, av_bin, env)) == -1) {
-		dprintf(STDERR_FILENO, "ft_strace: exec: %s\n", strerror(errno));
-		exit(status);
-	}
+	if ((status = execve(bin, av_bin, env)) == -1)
+		exit(1);
 	exit(0);
 }
 
@@ -121,11 +119,11 @@ void		wait_and_block_signals(pid_t child, int *status) {
 		die("sigprocmask", child);
 }
 
-void		initialize_tracer(pid_t child, int *status) {
+void		initialize_tracer(pid_t child) {
 	if (ptrace(PTRACE_SEIZE, child, NULL, NULL) == -1)
 		die("ptrace", child);
-	wait_and_block_signals(child, status);
-	if (ptrace(PTRACE_SETOPTIONS, child, 0, PTRACE_O_TRACESYSGOOD)) //| PTRACE_O_TRACEEXEC | PTRACE_O_TRACEEXIT))
+	wait_and_block_signals(child, NULL);
+	if (ptrace(PTRACE_SETOPTIONS, child, 0, PTRACE_O_TRACESYSGOOD))
 		die("ptrace", child);
 }
 
@@ -134,13 +132,22 @@ void		get_registers_values(union x86_64_regs *regs, int child) {
 		die("ptrace", child);
 }
 
-bool		handle_sig_and_wait_syscall(pid_t child, int *status)
+bool		handle_sig_and_wait_syscall(pid_t child, enum e_si_life si_life)
 {
-	bool signal_inj = false;
+	static int status;
 
+	if (si_life == SI_DEAD) {
+		if (WIFSIGNALED(status))
+			print_sig(child, SI_DEAD);
+		else
+			dprintf(STDERR_FILENO, "+++ exited with %d +++\n", WEXITSTATUS(status));
+		return (true);
+	}
+
+	bool signal_inj = false;
 	while (42) {
 		if (signal_inj) {
-			if (ptrace(PTRACE_SYSCALL, child, 0, WSTOPSIG(*status)) == -1)
+			if (ptrace(PTRACE_SYSCALL, child, 0, WSTOPSIG(status)) == -1)
 				die("ptrace", child);
 			signal_inj = false;
 		}
@@ -149,16 +156,14 @@ bool		handle_sig_and_wait_syscall(pid_t child, int *status)
 				die("ptrace", child);
 		}
 
-		wait_and_block_signals(child, status);
-		if (WIFEXITED(*status)) {
+		wait_and_block_signals(child, &status);
+
+		if (WIFEXITED(status))
 			return (false);
-		}
-		else if (WIFSIGNALED(*status)) {
-			print_sig(child, SI_DEAD);
-			exit(0);
-		}
-		else if (WIFSTOPPED(*status)) {
-			if (WSTOPSIG(*status) & 0x80)
+		else if (WIFSIGNALED(status))
+			return (false);
+		else if (WIFSTOPPED(status)) {
+			if (WSTOPSIG(status) & 0x80)
 				return (true);
 			else
 				print_sig(child, SI_ALIVE);
@@ -175,23 +180,22 @@ void		tracer(pid_t child)
 		.iov_base = &regs,
 		.iov_len = sizeof(regs)
 	};
-	int		status;
 
-	initialize_tracer(child, &status);
+	initialize_tracer(child);
 	while(42)
 	{
-		if (!handle_sig_and_wait_syscall(child, &status))
+		if (!handle_sig_and_wait_syscall(child, SI_ALIVE))
 			break;
 		get_registers_values(&regs, child);
 		syscall_arch = get_syscall_arch(child, &io);
 		if (syscall_arch == SYSCALL_32) {
-			if (!get_and_print_syscall_32(&regs, child, &status)) break ;
+			if (!get_and_print_syscall_32(&regs, child)) break ;
 		}
 		else {
-			if (!get_and_print_syscall_64(&regs, child, &status)) break ;
+			if (!get_and_print_syscall_64(&regs, child)) break ;
 		}
 	}
-	dprintf(STDERR_FILENO, "+++ exited with %d +++\n", WEXITSTATUS(status));
+	handle_sig_and_wait_syscall(child, SI_DEAD);
 }
 
 void		start_tracing(char *bin, char **av_bin, char **env)
@@ -211,7 +215,7 @@ int			main(int ac, char **av, char **env)
 	char		*bin_path;
 
 	if (ac < 2) {
-		puts("ft_strace: must have PROG [ARGS]");
+		dprintf(STDERR_FILENO, "ft_strace: must have PROG [ARGS]\n");
 		return (EXIT_FAILURE);
 	}
 	bin_path = get_bin_path(av[1]);
