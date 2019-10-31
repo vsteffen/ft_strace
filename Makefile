@@ -41,8 +41,10 @@ TESTBINPATH	=	$(ROOT)/bin_test
 
 SRC =	ft_strace.c \
 		check_args.c \
-		print_syscall_arg.c \
-		syscall_handlers.c
+		signals.c \
+		print_syscall.c \
+		syscall_handler_gen.c \
+		syscall_handler_read_write.c
 
 COMPILE	= no
 
@@ -129,4 +131,5 @@ test: $(NAME)
 
 test-clean:
 	$(RM) -rf $(TESTBINPATH)
-	echo $(PROJECT)": tests clean"
+	printf $(PROJECT)": tests clean "
+	$(call PRINT_STATUS,DONE,SUCCESS)

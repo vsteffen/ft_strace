@@ -3,6 +3,7 @@ FROM amd64/ubuntu:xenial
 RUN apt-get update && apt-get install -y \
 	gcc \
 	clang \
+	libc6-dev-i386 \
 	git \
 	make \
 	man \
