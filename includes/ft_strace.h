@@ -114,7 +114,7 @@ void			get_registers_values(union x86_64_regs *regs, int child);
 bool			get_and_print_syscall_64(union x86_64_regs *x86_64_r, pid_t child);
 bool			get_and_print_syscall_32(union x86_64_regs *i386_r, pid_t child);
 
-size_t			print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size_t size);
+size_t			print_arg(size_t reg, enum e_type_syscall_arg type, pid_t child, size_t size);
 bool			print_ret_val(union x86_64_regs *regs, enum e_type_syscall_arg type, pid_t child, size_t nb_char_print, struct s_syscall_state state);
 
 bool			syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_data *syscall_data, pid_t child, enum e_syscall_arch syscall_arch);

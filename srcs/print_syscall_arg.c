@@ -58,35 +58,35 @@ size_t		print_escape_string(const uint8_t *str, const size_t size, const size_t 
 	return (ret_print);
 }
 
-static size_t print_char(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "%hhd", (char)reg); }
-static size_t print_short(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%hd", (short)reg); }
-static size_t print_int(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "%d", (int)reg); }
-static size_t print_longint(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%ld", (long int)reg); }
-static size_t print_longlongint(uintmax_t reg, __unused pid_t child, __unused size_t size)	{ return dprintf(STDERR_FILENO, "%lld", (long long int)reg); }
+static size_t print_char(size_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "%hhd", (char)reg); }
+static size_t print_short(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%hd", (short)reg); }
+static size_t print_int(size_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "%d", (int)reg); }
+static size_t print_longint(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%ld", (long int)reg); }
+static size_t print_longlongint(size_t reg, __unused pid_t child, __unused size_t size)	{ return dprintf(STDERR_FILENO, "%lld", (long long int)reg); }
 
-static size_t print_uchar(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%hhu", (unsigned char)reg); }
-static size_t print_ushort(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%hu", (unsigned short)reg); }
-static size_t print_uint(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "%u", (unsigned int)reg); }
-static size_t print_ulongint(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%lu", (unsigned long int)reg); }
-static size_t print_ulonglongint(uintmax_t reg, __unused pid_t child, __unused size_t size)	{ return dprintf(STDERR_FILENO, "%llu", (unsigned long long int)reg); }
+static size_t print_uchar(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%hhu", (unsigned char)reg); }
+static size_t print_ushort(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%hu", (unsigned short)reg); }
+static size_t print_uint(size_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "%u", (unsigned int)reg); }
+static size_t print_ulongint(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%lu", (unsigned long int)reg); }
+static size_t print_ulonglongint(size_t reg, __unused pid_t child, __unused size_t size)	{ return dprintf(STDERR_FILENO, "%llu", (unsigned long long int)reg); }
 
-static size_t print_float(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%f", (float)reg); }
-static size_t print_double(uintmax_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%f", (double)reg); }
-static size_t print_longdouble(uintmax_t reg, __unused pid_t child, __unused size_t size)	{ return dprintf(STDERR_FILENO, "%Lf", (long double)reg); }
+static size_t print_float(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%f", (float)reg); }
+static size_t print_double(size_t reg, __unused pid_t child, __unused size_t size)		{ return dprintf(STDERR_FILENO, "%f", (double)reg); }
+static size_t print_longdouble(size_t reg, __unused pid_t child, __unused size_t size)	{ return dprintf(STDERR_FILENO, "%Lf", (long double)reg); }
 
-static size_t print_addr(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return (reg ? dprintf(STDERR_FILENO, "%p", (void *)reg) : dprintf(STDERR_FILENO, "NULL")); }
-static size_t print_hex(uintmax_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "0x%zx", reg); }
+static size_t print_addr(size_t reg, __unused pid_t child, __unused size_t size)			{ return (reg ? dprintf(STDERR_FILENO, "%p", (void *)reg) : dprintf(STDERR_FILENO, "NULL")); }
+static size_t print_hex(size_t reg, __unused pid_t child, __unused size_t size)			{ return dprintf(STDERR_FILENO, "0x%zx", reg); }
 
-static size_t print_buff(uintmax_t reg, __unused pid_t child, size_t size)					{
-	uint8_t		str[CEIL_MULTIPLE(BUFF_UNESCAPE_MAX_SIZE + 1, sizeof(uintmax_t))];
+static size_t print_buff(size_t reg, __unused pid_t child, size_t size)					{
+	uint8_t		str[CEIL_MULTIPLE(BUFF_UNESCAPE_MAX_SIZE + 1, sizeof(size_t))];
 	size_t		total_read = 0;
 	size_t		max_size;
-	uintmax_t	tmp;
+	size_t		tmp;
 
 	max_size = (size < BUFF_UNESCAPE_MAX_SIZE) ? size : BUFF_UNESCAPE_MAX_SIZE;
 	while (total_read < max_size) {
 		tmp = ptrace(PTRACE_PEEKDATA, child, reg + total_read, NULL);
-		if (tmp == (uintmax_t)-1) break;
+		if (tmp == (size_t)-1) break;
 		memcpy(str + total_read, &tmp, sizeof(tmp));
 		total_read += sizeof(tmp);
 	}
@@ -95,17 +95,17 @@ static size_t print_buff(uintmax_t reg, __unused pid_t child, size_t size)					{
 	return (print_escape_string(str, total_read, BUFF_UNESCAPE_MAX_SIZE));
 }
 
-static size_t print_str(uintmax_t reg, pid_t child, __unused size_t size)					{
-	uint8_t		str[CEIL_MULTIPLE(STR_UNESCAPE_MAX_SIZE + 1, sizeof(uintmax_t))];
+static size_t print_str(size_t reg, pid_t child, __unused size_t size)					{
+	uint8_t		str[CEIL_MULTIPLE(STR_UNESCAPE_MAX_SIZE + 1, sizeof(size_t))];
 	size_t		total_read = 0;
 	size_t		max_size;
-	uintmax_t	tmp;
+	size_t		tmp;
 	void		*ptr;
 
 	max_size = (size < STR_UNESCAPE_MAX_SIZE) ? size : STR_UNESCAPE_MAX_SIZE;
 	while (total_read < max_size) {
 		tmp = ptrace(PTRACE_PEEKDATA, child, reg + total_read, NULL);
-		if (tmp == (uintmax_t)-1) break;
+		if (tmp == (size_t)-1) break;
 		memcpy(str + total_read, &tmp, sizeof(tmp));
 		ptr = memchr(&tmp, 0, sizeof(tmp));
 		if (ptr) {
@@ -118,9 +118,9 @@ static size_t print_str(uintmax_t reg, pid_t child, __unused size_t size)					{
 	return (print_escape_string(str, total_read, STR_UNESCAPE_MAX_SIZE));
 }
 
-size_t		print_arg(uintmax_t reg, enum e_type_syscall_arg type, pid_t child, size_t size)
+size_t		print_arg(size_t reg, enum e_type_syscall_arg type, pid_t child, size_t size)
 {
-	static size_t (* const print_fn[])(uintmax_t, pid_t, size_t) = {
+	static size_t (* const print_fn[])(size_t, pid_t, size_t) = {
 	# include "print_function.h"
 	};
 
@@ -179,7 +179,7 @@ bool		syscall64_generic_handler(union x86_64_regs *regs, const struct s_syscall_
 
 	for (uint8_t i = 0; syscall_data->args[i] != T_NONE && i < MAX_ARG; i++) {
 		if (i > 0) nb_char_print += dprintf(STDERR_FILENO, ", ");
-		nb_char_print += print_arg(*(uintmax_t *)((void *)regs + regs_offset[i]), syscall_data->args[i], child, -1);
+		nb_char_print += print_arg(*(size_t *)((void *)regs + regs_offset[i]), syscall_data->args[i], child, -1);
 	}
 	return print_ret_val(regs, syscall_data->args[6], child, nb_char_print, (struct s_syscall_state){SYSCALL_BEGIN, syscall_arch, false});
 }

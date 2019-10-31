@@ -1,4 +1,4 @@
-FROM i386/ubuntu:xenial
+FROM amd64/ubuntu:xenial
 
 RUN apt-get update && apt-get install -y \
 	gcc \
@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y \
 	git \
 	make \
 	man \
-	vim
+	vim \
+	strace
 
 RUN git clone https://github.com/vsteffen/ft_strace /root/ft_strace
 
