@@ -43,13 +43,17 @@ char		*get_bin_path(char *bin_name)
 	}
 	else
 	{
-		while ((delim = strchr(path, ':')))
+		while (path)
 		{
+			delim = strchrnul(path, ':');
 			tmp_path = concat_pathn_prog(path, (delim - path), bin_name);
 			if (check_bin_path_exist(tmp_path))
 				return (tmp_path);
 			free(tmp_path);
-			path = ++delim;
+			if (*delim)
+				path = ++delim;
+			else
+				path = NULL;
 		}
 	}
 	dprintf(STDERR_FILENO, "ft_strace: Can't stat '%s': No such file or directory\n", bin_name);
