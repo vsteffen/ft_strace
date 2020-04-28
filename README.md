@@ -1,2 +1,4 @@
 # ft_strace
-Premier pas d'une série de projets en C menant à la réalisation d'un mini-GDB, ce projet vous demande de recoder strace, un outil qui permet de lister tous les appels systèmes effectués par un programme en cours d'exécution.
+42 School project. From the subject (also available in french):
+
+> Strace is a debugging tool under Linux to monitor system calls use by a program, and all the signals it receives, similar to the tool truss on other Unix systems. It was made possible through a feature of the Linux kernel called ptrace.
